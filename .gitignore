@@ -1,0 +1,38 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+
+# Data artifacts
+data/**
+!data/.gitkeep
+
+# Reports / models / caches
+reports/**
+!reports/.gitkeep
+models/
+cache/
+logs/
+
+# Large generated files
+*.parquet
+*.feather
+*.csv
+*.db
+*.duckdb
+*.pkl
+*.joblib
+*.zst
+*.zip
+*.txt
+
+# Keep docs/config/code
+!README.md
+!requirements.txt
+!pyproject.toml
+!configs/**
+!src/**
+!scripts/**
+!tests/**
