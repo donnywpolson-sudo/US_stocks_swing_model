@@ -12,6 +12,7 @@ paths:
   label_reports: reports/labels
   feature_reports: reports/features
   wfa_reports: reports/wfa
+  metrics_reports: reports/metrics
 
 causal_gating:
   min_history_bars: 252

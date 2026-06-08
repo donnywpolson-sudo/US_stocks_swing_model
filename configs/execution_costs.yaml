@@ -1,0 +1,4 @@
+round_trip_cost_bps: 25
+decile_buckets: 10
+quintile_buckets: 5
+score_outlier_abs_threshold: 5.0
