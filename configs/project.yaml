@@ -7,6 +7,7 @@ paths:
   research_ohlcv_daily: data/research_ohlcv_daily
   labeled_target_h20: data/labeled/target_h20
   feature_matrix_baseline_h20: data/feature_matrices/baseline_h20
+  feature_matrix_expanded_h20: data/feature_matrices/expanded_h20
   oos_predictions_baseline_h20: data/oos_predictions/baseline_h20
   validation_reports: reports/validation
   label_reports: reports/labels
