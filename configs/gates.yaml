@@ -1,0 +1,11 @@
+baseline_h20:
+  min_total_oos_rows: 1000000
+  min_fold_count: 20
+  min_rank_ic_t_stat: 2.0
+  min_mean_daily_rank_ic: 0.0
+  min_long_short_net_return: 0.0
+  min_top_decile_net_return: 0.0
+  warn_short_leg_net_return_lte: 0.0
+  warn_long_short_net_return_below: 0.005
+  warn_mean_daily_rank_ic_below: 0.05
+  warn_abs_score_extreme_above: 5.0
