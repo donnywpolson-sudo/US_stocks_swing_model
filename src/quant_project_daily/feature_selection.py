@@ -3,7 +3,6 @@ from __future__ import annotations
 import json
 from typing import Any
 
-import numpy as np
 import pandas as pd
 
 from quant_project_daily.config import ProjectPaths, project_paths
@@ -15,18 +14,17 @@ def _is_leakage_col(name: str, tokens: list[str]) -> bool:
     return any(tok in low for tok in tokens)
 
 
-def _fold_ic_corr(discovery: pd.DataFrame) -> pd.DataFrame | None:
-    if "fold_rank_ic_by_fold" not in discovery.columns:
+def _pair_corr_to_matrix(pair_corr: pd.DataFrame | None) -> pd.DataFrame | None:
+    if pair_corr is None or pair_corr.empty:
         return None
-    records = {}
-    for _, row in discovery.iterrows():
-        try:
-            records[row["feature"]] = json.loads(row["fold_rank_ic_by_fold"])
-        except (TypeError, json.JSONDecodeError):
-            continue
-    if len(records) < 2:
-        return None
-    return pd.DataFrame.from_dict(records, orient="index").T.astype(float).corr()
+    features = sorted(set(pair_corr["feature_a"]) | set(pair_corr["feature_b"]))
+    corr = pd.DataFrame(0.0, index=features, columns=features)
+    for feature in features:
+        corr.loc[feature, feature] = 1.0
+    for _, row in pair_corr.iterrows():
+        corr.loc[row["feature_a"], row["feature_b"]] = float(row["max_abs_corr"])
+        corr.loc[row["feature_b"], row["feature_a"]] = float(row["max_abs_corr"])
+    return corr
 
 
 def select_features(
@@ -64,7 +62,6 @@ def select_features(
     ).reset_index(drop=True)
     selected: list[str] = []
     threshold = float(cfg["correlation_prune_threshold"])
-    corr = corr if corr is not None else _fold_ic_corr(ranked)
     for _, row in ranked[ranked["reject_reason"] == ""].iterrows():
         feature = row["feature"]
         if corr is not None and selected and feature in corr.index:
@@ -94,8 +91,16 @@ def select_features(
 def run_feature_selection(paths: ProjectPaths | None = None) -> dict[str, object]:
     p = paths or project_paths()
     cfg = load_feature_selection_config()
-    discovery = pd.read_csv(p.feature_reports / "expanded_h20_feature_discovery.csv")
-    ranking, selected, rejected, summary = select_features(discovery, cfg)
+    discovery_path = p.feature_reports / "expanded_h20_feature_discovery.csv"
+    if not discovery_path.exists():
+        raise FileNotFoundError(
+            f"missing Stage21 discovery output: {discovery_path}. "
+            "Run: python scripts/stage21_discover_features.py --max-folds 2"
+        )
+    discovery = pd.read_csv(discovery_path)
+    corr_path = p.feature_reports / "expanded_h20_feature_correlations.csv"
+    corr = _pair_corr_to_matrix(pd.read_csv(corr_path)) if corr_path.exists() else None
+    ranking, selected, rejected, summary = select_features(discovery, cfg, corr)
     p.feature_reports.mkdir(parents=True, exist_ok=True)
     ranking.to_csv(p.feature_reports / "expanded_h20_feature_ranking.csv", index=False)
     selected.to_csv(p.feature_reports / "expanded_h20_selected_features.csv", index=False)
@@ -107,8 +112,17 @@ def run_feature_selection(paths: ProjectPaths | None = None) -> dict[str, object
 def freeze_feature_set(paths: ProjectPaths | None = None) -> dict[str, object]:
     p = paths or project_paths()
     cfg = load_feature_selection_config()
-    selected = pd.read_csv(p.feature_reports / "expanded_h20_selected_features.csv")
-    rejected = pd.read_csv(p.feature_reports / "expanded_h20_rejected_features.csv")
+    selected_path = p.feature_reports / "expanded_h20_selected_features.csv"
+    rejected_path = p.feature_reports / "expanded_h20_rejected_features.csv"
+    missing = [str(x) for x in [selected_path, rejected_path] if not x.exists()]
+    if missing:
+        raise FileNotFoundError(
+            "missing Stage22 selection output(s): "
+            + ", ".join(missing)
+            + ". Run: python scripts/stage22_select_features.py"
+        )
+    selected = pd.read_csv(selected_path)
+    rejected = pd.read_csv(rejected_path)
     out = p.frozen_features_expanded_h20_v1
     out.mkdir(parents=True, exist_ok=True)
     feature_cols = selected["feature"].tolist()

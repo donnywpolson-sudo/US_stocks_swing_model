@@ -11,4 +11,4 @@ from quant_project_daily.feature_discovery import parse_args, run_feature_discov
 
 if __name__ == "__main__":
     args = parse_args()
-    print(json.dumps(run_feature_discovery(max_folds=args.max_folds), indent=2, default=str))
+    print(json.dumps(run_feature_discovery(max_folds=args.max_folds, fold_id=args.fold_id), indent=2, default=str))

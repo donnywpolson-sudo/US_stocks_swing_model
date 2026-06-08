@@ -9,6 +9,8 @@ min_std: 1.0e-12
 min_abs_mean_rank_ic: 0.001
 min_sign_stability: 0.50
 correlation_prune_threshold: 0.95
+correlation_sample_rows_per_fold: 250000
+correlation_sample_date_stride: 20
 leakage_tokens:
   - target
   - label

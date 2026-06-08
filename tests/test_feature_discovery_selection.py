@@ -6,8 +6,8 @@ import numpy as np
 import pandas as pd
 
 from quant_project_daily.config import ProjectPaths
-from quant_project_daily.feature_discovery import discover_features_for_folds
-from quant_project_daily.feature_selection import freeze_feature_set, select_features
+from quant_project_daily.feature_discovery import _load_matrix_for_plan, discover_features_for_folds
+from quant_project_daily.feature_selection import freeze_feature_set, run_feature_selection, select_features
 
 
 def _cfg() -> dict[str, object]:
@@ -22,6 +22,8 @@ def _cfg() -> dict[str, object]:
         "min_abs_mean_rank_ic": 0.001,
         "min_sign_stability": 0.50,
         "correlation_prune_threshold": 0.95,
+        "correlation_sample_rows_per_fold": 250000,
+        "correlation_sample_date_stride": 20,
         "leakage_tokens": ["target", "label", "fwd_ret", "next_open", "exit_close", "exit_date"],
     }
 
@@ -75,7 +77,7 @@ def test_discovery_uses_train_dates_only_not_test_dates() -> None:
         }
     )
 
-    by_fold, discovery = discover_features_for_folds(matrix, plan, ["x"], _cfg())
+    by_fold, discovery, _ = discover_features_for_folds(matrix, plan, ["x"], _cfg())
 
     assert by_fold.loc[0, "fold_rank_ic"] < 0
     assert discovery.loc[0, "mean_daily_rank_ic"] < 0
@@ -121,3 +123,30 @@ def test_freeze_feature_set_writes_manifest_and_schema_outputs(tmp_path, monkeyp
     assert manifest["selected_feature_count"] == 1
     assert json.loads((paths.frozen_features_expanded_h20_v1 / "feature_cols.json").read_text()) == ["strong"]
     assert "train-fold-only" in (paths.frozen_features_expanded_h20_v1 / "manifest.json").read_text()
+
+
+def test_load_matrix_filters_date_typed_parquet_with_split_strings(tmp_path) -> None:
+    paths = _paths(tmp_path)
+    paths.feature_matrix_expanded_h20.mkdir(parents=True)
+    pd.DataFrame(
+        {
+            "date": pd.to_datetime(["2019-12-31", "2020-01-01", "2020-01-02"]).date,
+            "fwd_ret_20d": [0.0, 0.1, 0.2],
+            "x": [1.0, 2.0, 3.0],
+        }
+    ).to_parquet(paths.feature_matrix_expanded_h20 / "expanded_h20.parquet", index=False)
+    folds = pd.DataFrame({"train_start_date": ["2020-01-01"], "train_end_date": ["2020-01-02"]})
+
+    out = _load_matrix_for_plan(paths, folds, ["date", "fwd_ret_20d", "x"])
+
+    assert out["date"].dt.strftime("%Y-%m-%d").tolist() == ["2020-01-01", "2020-01-02"]
+
+
+def test_stage22_missing_discovery_has_clear_error(tmp_path) -> None:
+    paths = _paths(tmp_path)
+    try:
+        run_feature_selection(paths)
+    except FileNotFoundError as exc:
+        assert "missing Stage21 discovery output" in str(exc)
+    else:
+        raise AssertionError("expected missing Stage21 output error")
