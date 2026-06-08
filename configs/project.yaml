@@ -1,0 +1,14 @@
+paths:
+  raw_txt: data/raw_txt
+  raw_manifest: data/raw_manifest/raw_manifest.parquet
+  validated: data/validated
+  normalized: data/normalized
+  causal: data/causal
+  validation_reports: reports/validation
+
+causal_gating:
+  min_history_bars: 252
+  price_min: 5.0
+  median_dollar_volume_lookback: 20
+  median_dollar_volume_min: 1000000.0
+  zero_volume_lookback: 20
