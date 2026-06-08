@@ -20,6 +20,7 @@ def _paths(tmp_path: Path) -> ProjectPaths:
         validation_reports=tmp_path / "reports" / "validation",
         label_reports=tmp_path / "reports" / "labels",
         feature_reports=tmp_path / "reports" / "features",
+        wfa_reports=tmp_path / "reports" / "wfa",
     )
 
 
