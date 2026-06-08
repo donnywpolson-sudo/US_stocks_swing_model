@@ -118,16 +118,14 @@ def validate_raw_files(files: list[Path], progress_every: int | None = None) -> 
             reason_counts["missing_required_columns"] += len(df)
             rows_read += len(df)
             parse_error += 1
-            detail = pd.DataFrame(
-                {
-                    "source_file": path.name,
-                    "raw_ticker": df["ticker"] if "ticker" in df.columns else "",
-                    "ticker": df["ticker"].map(clean_ticker) if "ticker" in df.columns else "",
-                    "date": df["date"] if "date" in df.columns else "",
-                    "reason": f"missing_required_columns:{','.join(missing)}",
-                }
-            )
-            rejected_frames.append(detail)
+            if len(df):
+                detail = pd.DataFrame(index=df.index)
+                detail["source_file"] = path.name
+                detail["raw_ticker"] = df["ticker"] if "ticker" in df.columns else ""
+                detail["ticker"] = df["ticker"].map(clean_ticker) if "ticker" in df.columns else ""
+                detail["date"] = df["date"] if "date" in df.columns else ""
+                detail["reason"] = f"missing_required_columns:{','.join(missing)}"
+                rejected_frames.append(detail)
             if progress_every and i % progress_every == 0:
                 _log_validation_progress(i, parse_ok, parse_error, rows_read, started)
             continue
