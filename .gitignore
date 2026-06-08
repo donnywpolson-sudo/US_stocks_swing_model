@@ -36,3 +36,7 @@ logs/
 !src/**
 !scripts/**
 !tests/**
+
+# Re-ignore generated Python caches after source-tree allow rules
+__pycache__/
+*.pyc
