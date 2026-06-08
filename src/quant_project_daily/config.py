@@ -21,6 +21,7 @@ class ProjectPaths:
     research_ohlcv_daily: Path
     labeled_target_h20: Path
     feature_matrix_baseline_h20: Path
+    oos_predictions_baseline_h20: Path
     validation_reports: Path
     label_reports: Path
     feature_reports: Path
@@ -50,6 +51,7 @@ def project_paths(config: dict[str, Any] | None = None) -> ProjectPaths:
         research_ohlcv_daily=rel("research_ohlcv_daily"),
         labeled_target_h20=rel("labeled_target_h20"),
         feature_matrix_baseline_h20=rel("feature_matrix_baseline_h20"),
+        oos_predictions_baseline_h20=rel("oos_predictions_baseline_h20"),
         validation_reports=rel("validation_reports"),
         label_reports=rel("label_reports"),
         feature_reports=rel("feature_reports"),
