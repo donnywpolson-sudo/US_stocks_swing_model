@@ -6,8 +6,10 @@ paths:
   causal: data/causal
   research_ohlcv_daily: data/research_ohlcv_daily
   labeled_target_h20: data/labeled/target_h20
+  feature_matrix_baseline_h20: data/feature_matrices/baseline_h20
   validation_reports: reports/validation
   label_reports: reports/labels
+  feature_reports: reports/features
 
 causal_gating:
   min_history_bars: 252
