@@ -1,0 +1,61 @@
+feature_set: expanded_h20
+input_path: data/labeled/target_h20
+output_path: data/feature_matrices/expanded_h20
+
+new_feature_columns:
+  - ret_2d
+  - ret_4d
+  - ret_15d
+  - ret_30d
+  - ret_120d
+  - ret_252d
+  - log_ret_1d
+  - log_ret_5d
+  - log_ret_20d
+  - ret_5d_z_60d
+  - ret_20d_z_252d
+  - reversal_5d_20d
+  - momentum_20d_60d
+  - drawdown_from_20d_high
+  - drawdown_from_120d_high
+  - bounce_from_120d_low
+  - bounce_from_252d_low
+  - close_position_in_120d_range
+  - close_position_in_252d_range
+  - days_since_20d_low
+  - days_since_60d_low
+  - days_since_20d_high
+  - days_since_60d_high
+  - dist_sma_100d
+  - sma_10d_slope
+  - sma_100d_slope
+  - sma_20_50_spread
+  - sma_50_200_spread
+  - trend_consistency_20d
+  - realized_vol_120d
+  - realized_vol_252d
+  - vol_ratio_20d_60d
+  - vol_ratio_20d_252d
+  - atr_14_z_252d
+  - downside_vol_20d
+  - upside_vol_20d
+  - downside_upside_vol_ratio_20d
+  - volume_z_120d
+  - dollar_volume_z_120d
+  - volume_ratio_20d_60d
+  - dollar_volume_ratio_20d_60d
+  - price_volume_trend_20d
+  - lower_wick_z_60d
+  - upper_wick_z_60d
+  - body_z_60d
+  - gap_z_60d
+  - large_down_day_20d_count
+  - large_up_day_20d_count
+  - rank_ret_5d_z_60d
+  - rank_ret_20d_z_252d
+  - rank_drawdown_from_120d_high
+  - rank_bounce_from_120d_low
+  - rank_close_position_in_252d_range
+  - rank_vol_ratio_20d_252d
+  - rank_lower_wick_z_60d
+  - rank_upper_wick_z_60d
