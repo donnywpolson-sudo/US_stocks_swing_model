@@ -27,6 +27,7 @@ class ProjectPaths:
     feature_reports: Path
     wfa_reports: Path
     metrics_reports: Path
+    gates_reports: Path
 
 
 def load_project_config(path: Path | None = None) -> dict[str, Any]:
@@ -58,6 +59,7 @@ def project_paths(config: dict[str, Any] | None = None) -> ProjectPaths:
         feature_reports=rel("feature_reports"),
         wfa_reports=rel("wfa_reports"),
         metrics_reports=rel("metrics_reports"),
+        gates_reports=rel("gates_reports"),
     )
 
 
