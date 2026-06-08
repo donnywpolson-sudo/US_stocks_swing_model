@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import time
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -143,7 +144,34 @@ def _read_matrix_for_fold(feature_path: Path, fold: pd.Series, cols: list[str]) 
     return df.to_pandas()
 
 
+def _log_fold_start(fold: pd.Series) -> None:
+    print(
+        "[stage15] fold_start "
+        f"fold_id={int(fold['fold_id'])} "
+        f"train_rows={int(fold['train_row_count'])} "
+        f"test_rows={int(fold['test_row_count'])} "
+        f"train_dates={fold['train_start_date']}..{fold['train_end_date']} "
+        f"test_dates={fold['test_start_date']}..{fold['test_end_date']}",
+        flush=True,
+    )
+
+
+def _log_fold_done(summary: dict[str, object], elapsed_seconds: float) -> None:
+    print(
+        "[stage15] fold_done "
+        f"fold_id={summary['fold_id']} "
+        f"elapsed_seconds={elapsed_seconds:.1f} "
+        f"pred_score_mean={summary['pred_score_mean']} "
+        f"pred_score_std={summary['pred_score_std']} "
+        f"pred_score_min={summary['pred_score_min']} "
+        f"pred_score_max={summary['pred_score_max']} "
+        f"oos_rows_written={summary['prediction_row_count']}",
+        flush=True,
+    )
+
+
 def run_baseline_wfa(max_folds: int | None = None, fold_id: int | None = None, paths: ProjectPaths | None = None) -> dict[str, object]:
+    total_started = time.perf_counter()
     p = paths or project_paths()
     model_cfg = load_model_config()
     feature_cols = _load_json_list(p.feature_matrix_baseline_h20 / "feature_cols.json")
@@ -162,14 +190,24 @@ def run_baseline_wfa(max_folds: int | None = None, fold_id: int | None = None, p
     failed = []
     all_preds = []
     for _, fold in requested.iterrows():
+        _log_fold_start(fold)
+        fold_started = time.perf_counter()
         try:
             matrix = _read_matrix_for_fold(p.feature_matrix_baseline_h20, fold, need_cols)
             result = run_fold(matrix, fold, feature_cols, model_cfg)
             result.predictions.to_parquet(p.oos_predictions_baseline_h20 / f"fold_{int(fold['fold_id']):03d}.parquet", index=False)
             all_preds.append(result.predictions)
             fold_summaries.append(result.summary)
+            _log_fold_done(result.summary, time.perf_counter() - fold_started)
         except Exception as exc:
             failed.append({"fold_id": int(fold["fold_id"]), "error": str(exc)})
+            print(
+                "[stage15] fold_failed "
+                f"fold_id={int(fold['fold_id'])} "
+                f"elapsed_seconds={time.perf_counter() - fold_started:.1f} "
+                f"error={exc}",
+                flush=True,
+            )
 
     fold_df = pd.DataFrame(fold_summaries)
     fold_df.to_csv(p.wfa_reports / "baseline_h20_fold_summary.csv", index=False)
@@ -188,6 +226,7 @@ def run_baseline_wfa(max_folds: int | None = None, fold_id: int | None = None, p
         "warnings": [],
     }
     (p.wfa_reports / "baseline_h20_oos_summary.json").write_text(json.dumps(summary, indent=2, default=str), encoding="utf-8")
+    print(f"[stage15] all_folds_done total_elapsed_seconds={time.perf_counter() - total_started:.1f}", flush=True)
     return summary
 
 
