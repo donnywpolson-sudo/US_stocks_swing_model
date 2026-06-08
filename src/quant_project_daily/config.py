@@ -19,7 +19,9 @@ class ProjectPaths:
     normalized: Path
     causal: Path
     research_ohlcv_daily: Path
+    labeled_target_h20: Path
     validation_reports: Path
+    label_reports: Path
 
 
 def load_project_config(path: Path | None = None) -> dict[str, Any]:
@@ -43,7 +45,9 @@ def project_paths(config: dict[str, Any] | None = None) -> ProjectPaths:
         normalized=rel("normalized"),
         causal=rel("causal"),
         research_ohlcv_daily=rel("research_ohlcv_daily"),
+        labeled_target_h20=rel("labeled_target_h20"),
         validation_reports=rel("validation_reports"),
+        label_reports=rel("label_reports"),
     )
 
 
