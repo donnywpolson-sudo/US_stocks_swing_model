@@ -18,6 +18,7 @@ class ProjectPaths:
     validated: Path
     normalized: Path
     causal: Path
+    research_ohlcv_daily: Path
     validation_reports: Path
 
 
@@ -41,6 +42,7 @@ def project_paths(config: dict[str, Any] | None = None) -> ProjectPaths:
         validated=rel("validated"),
         normalized=rel("normalized"),
         causal=rel("causal"),
+        research_ohlcv_daily=rel("research_ohlcv_daily"),
         validation_reports=rel("validation_reports"),
     )
 

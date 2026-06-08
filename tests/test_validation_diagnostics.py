@@ -14,6 +14,7 @@ def _paths(tmp_path: Path) -> ProjectPaths:
         validated=tmp_path / "data" / "validated",
         normalized=tmp_path / "data" / "normalized",
         causal=tmp_path / "data" / "causal",
+        research_ohlcv_daily=tmp_path / "data" / "research_ohlcv_daily",
         validation_reports=tmp_path / "reports" / "validation",
     )
 

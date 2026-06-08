@@ -4,6 +4,7 @@ paths:
   validated: data/validated
   normalized: data/normalized
   causal: data/causal
+  research_ohlcv_daily: data/research_ohlcv_daily
   validation_reports: reports/validation
 
 causal_gating:
@@ -12,3 +13,7 @@ causal_gating:
   median_dollar_volume_lookback: 20
   median_dollar_volume_min: 1000000.0
   zero_volume_lookback: 20
+
+research_universe:
+  warmup_start_date: 2009-01-01
+  research_start_date: 2010-01-01
