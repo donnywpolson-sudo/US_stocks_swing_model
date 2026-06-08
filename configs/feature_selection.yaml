@@ -1,0 +1,18 @@
+feature_set: expanded_h20
+version: expanded_h20_v1
+target_column: fwd_ret_20d
+class_target_column: target_class_20d
+max_selected_features: 64
+min_non_null_pct: 0.50
+min_finite_pct: 0.99
+min_std: 1.0e-12
+min_abs_mean_rank_ic: 0.001
+min_sign_stability: 0.50
+correlation_prune_threshold: 0.95
+leakage_tokens:
+  - target
+  - label
+  - fwd_ret
+  - next_open
+  - exit_close
+  - exit_date

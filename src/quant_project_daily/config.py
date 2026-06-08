@@ -22,6 +22,7 @@ class ProjectPaths:
     labeled_target_h20: Path
     feature_matrix_baseline_h20: Path
     feature_matrix_expanded_h20: Path
+    frozen_features_expanded_h20_v1: Path
     oos_predictions_baseline_h20: Path
     validation_reports: Path
     label_reports: Path
@@ -55,6 +56,7 @@ def project_paths(config: dict[str, Any] | None = None) -> ProjectPaths:
         labeled_target_h20=rel("labeled_target_h20"),
         feature_matrix_baseline_h20=rel("feature_matrix_baseline_h20"),
         feature_matrix_expanded_h20=rel("feature_matrix_expanded_h20"),
+        frozen_features_expanded_h20_v1=rel("frozen_features_expanded_h20_v1"),
         oos_predictions_baseline_h20=rel("oos_predictions_baseline_h20"),
         validation_reports=rel("validation_reports"),
         label_reports=rel("label_reports"),

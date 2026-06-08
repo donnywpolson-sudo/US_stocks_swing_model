@@ -18,6 +18,7 @@ def _paths(tmp_path: Path) -> ProjectPaths:
         labeled_target_h20=tmp_path / "data" / "labeled" / "target_h20",
         feature_matrix_baseline_h20=tmp_path / "data" / "feature_matrices" / "baseline_h20",
         feature_matrix_expanded_h20=tmp_path / "data" / "feature_matrices" / "expanded_h20",
+        frozen_features_expanded_h20_v1=tmp_path / "data" / "frozen_features" / "expanded_h20_v1",
         oos_predictions_baseline_h20=tmp_path / "data" / "oos_predictions" / "baseline_h20",
         validation_reports=tmp_path / "reports" / "validation",
         label_reports=tmp_path / "reports" / "labels",
