@@ -7,11 +7,9 @@ __pycache__/
 
 # Data artifacts
 data/**
-!data/.gitkeep
 
 # Reports / models / caches
 reports/**
-!reports/.gitkeep
 models/
 cache/
 logs/
@@ -31,6 +29,7 @@ logs/
 # Keep docs/config/code
 !README.md
 !requirements.txt
+!AGENTS.md
 !pyproject.toml
 !configs/**
 !src/**
