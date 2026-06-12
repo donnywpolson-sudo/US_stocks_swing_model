@@ -3,7 +3,6 @@ from __future__ import annotations
 
 import numpy as np
 import pandas as pd
-import pytest
 
 from quant_project_daily.normalize_daily import normalize_daily
 from quant_project_daily.causal_gating import apply_causal_gating
@@ -197,7 +196,11 @@ def test_synthetic_daily_pipeline_smoke() -> None:
         "score_outlier_abs_threshold": 5.0,
     }
     summary, _reports = build_metrics(fold_result.predictions, metrics_cfg)
-    assert summary["total_oos_rows"] > 0, "no OOS rows in metrics"
-    assert "missing_oos_predictions" not in summary.get("blockers", []), (
-        "metrics blocked by missing_oos_predictions"
-    )
+
+    total_oos_rows = summary["total_oos_rows"]
+    blockers = summary["blockers"]
+
+    assert isinstance(total_oos_rows, int)
+    assert total_oos_rows > 0
+    assert isinstance(blockers, list)
+    assert "missing_oos_predictions" not in blockers
