@@ -1,0 +1,72 @@
+# Stooq US Stock Data Source Configuration
+# Inspected from raw archives in data/raw/
+
+source: stooq
+description: "Stooq US stock daily/hourly data (primary: ASCII TXT, secondary: MetaStock)"
+
+archives:
+  - path: data/raw/d_us_txt.zip
+    type: daily_ascii
+    inner_path_pattern: data/daily/us/**/*.us.txt
+    symbol_count: 12384
+    primary_pipeline: true
+    notes: "Primary daily OHLCV source. 534 MB, 12384 TXT files in exchange subdirectories."
+
+  - path: data/raw/h_us_txt.zip
+    type: hourly_ascii
+    inner_path_pattern: data/hourly/us/**/*.us.txt
+    symbol_count: 12384
+    primary_pipeline: true
+    notes: "Primary hourly OHLCV source. 448 MB, 12384 TXT files in exchange subdirectories."
+
+  - path: data/raw/d_us_ms.zip
+    type: metastock_daily
+    symbol_count: 12384
+    primary_pipeline: false
+    notes: "MetaStock format (binary MASTER/EMASTER/DOP). Not parsed. Available for cross-validation."
+
+  - path: data/raw/h_us_ms.zip
+    type: metastock_hourly
+    symbol_count: 12384
+    primary_pipeline: false
+    notes: "MetaStock format (binary MASTER/EMASTER/DOP). Not parsed. Available for cross-validation."
+
+schema:
+  daily:
+    columns: [ticker, per, date, time, open, high, low, close, vol, openint]
+    delimiter: ","
+    encoding: ascii
+    header_format: "<TICKER>,<PER>,<DATE>,<TIME>,<OPEN>,<HIGH>,<LOW>,<CLOSE>,<VOL>,<OPENINT>"
+    per_value: "D"
+    time_value: "000000"
+    sample_file: "data/daily/us/nasdaq etfs/aadr.us.txt"
+
+  hourly:
+    columns: [ticker, per, date, time, open, high, low, close, vol, openint]
+    delimiter: ","
+    encoding: ascii
+    header_format: "<TICKER>,<PER>,<DATE>,<TIME>,<OPEN>,<HIGH>,<LOW>,<CLOSE>,<VOL>,<OPENINT>"
+    per_value: "60"
+    time_value: "HHMMSS"
+    sample_file: "data/hourly/us/nasdaq etfs/aadr.us.txt"
+
+limitations:
+  metadata_missing: true
+  metadata_notes: >
+    No listing/delisting, name, or exchange metadata found in any archive.
+    Symbol screening relies entirely on symbols present in the TXT files.
+    This introduces survivorship bias risk.
+  survivorship_bias_risk: true
+
+  adjusted_uncertainty: true
+  adjusted_notes:
+    - "Stooq adjustment behavior unverified from official documentation"
+    - "Prices likely split-adjusted based on community knowledge"
+    - "Dividend adjustment status: UNCONFIRMED"
+    - "Volume appears as float values in older records — split-adjusted volume likely"
+    - "All adjustment assumptions should be validated before modeling"
+
+  timezone_assumptions:
+    daily: "US/Eastern end-of-day (time=000000 in files)"
+    hourly: "US/Eastern (time=HHMMSS in files)"
+    verification_status: "unverified from official docs"
