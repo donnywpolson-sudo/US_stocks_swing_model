@@ -17,6 +17,27 @@ def load_baseline_feature_config(path: Path | None = None) -> dict[str, Any]:
 
 
 def build_column_registry(columns: list[str], cfg: dict[str, Any]) -> dict[str, list[str]]:
+    actual = set(columns)
+    missing_groups: dict[str, list[str]] = {}
+
+    missing_features = sorted(set(cfg["feature_columns"]) - actual)
+    if missing_features:
+        missing_groups["feature_columns"] = missing_features
+
+    missing_targets = sorted(set(cfg["target_columns"]) - actual)
+    if missing_targets:
+        missing_groups["target_columns"] = missing_targets
+
+    missing_metadata = sorted(set(cfg["metadata_columns"]) - actual)
+    if missing_metadata:
+        missing_groups["metadata_columns"] = missing_metadata
+
+    if missing_groups:
+        parts = [f"  {group}: {cols}" for group, cols in missing_groups.items()]
+        raise ValueError(
+            "configured columns missing from actual matrix columns:\n" + "\n".join(parts)
+        )
+
     feature_cols = [c for c in cfg["feature_columns"] if c in columns]
     target_cols = [c for c in cfg["target_columns"] if c in columns]
     metadata_cols = [c for c in cfg["metadata_columns"] if c in columns]

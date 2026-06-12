@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import pandas as pd
 import pytest
 
@@ -79,3 +81,75 @@ def test_max_folds_limits_requested_folds() -> None:
     plan = pd.DataFrame({"fold_id": [1, 2, 3]})
     assert select_folds(plan, max_folds=2)["fold_id"].tolist() == [1, 2]
     assert select_folds(plan, fold_id=3)["fold_id"].tolist() == [3]
+
+
+def test_run_fold_failure_raises_runtime_error(tmp_path: Path) -> None:
+    """Fold failures must not silently pass; run_baseline_wfa must raise."""
+    import json
+    from unittest.mock import patch
+    from pathlib import Path as P
+    from quant_project_daily.baseline_wfa import run_baseline_wfa
+    from quant_project_daily.config import ProjectPaths
+
+    # Create minimal directories and files
+    feature_dir = tmp_path / "feature_matrix_baseline_h20"
+    feature_dir.mkdir(parents=True)
+    oos_dir = tmp_path / "oos_predictions_baseline_h20"
+    oos_dir.mkdir(parents=True)
+    wfa_dir = tmp_path / "wfa_reports"
+    wfa_dir.mkdir(parents=True)
+
+    # Write required JSON lists
+    (feature_dir / "feature_cols.json").write_text(json.dumps(["f1"]))
+    (feature_dir / "target_cols.json").write_text(json.dumps(["target_class_20d"]))
+    (feature_dir / "metadata_cols.json").write_text(json.dumps(["date", "ticker"]))
+    (feature_dir / "excluded_cols.json").write_text(json.dumps(["fwd_ret_20d"]))
+
+    # Write a split plan with one fold that will fail (empty data)
+    plan = pd.DataFrame({
+        "fold_id": [1],
+        "train_start_date": ["2020-01-01"],
+        "train_end_date": ["2020-01-03"],
+        "test_start_date": ["2020-01-06"],
+        "test_end_date": ["2020-01-08"],
+        "train_row_count": [100],
+        "test_row_count": [100],
+    })
+    plan.to_csv(wfa_dir / "baseline_h20_split_plan.csv", index=False)
+
+    # Write an empty feature parquet so _read_matrix_for_fold returns empty df
+    empty_df = pd.DataFrame({
+        "date": pd.Series(dtype="object"),
+        "ticker": pd.Series(dtype="object"),
+        "raw_ticker": pd.Series(dtype="object"),
+        "f1": pd.Series(dtype="float64"),
+        "target_class_20d": pd.Series(dtype="float64"),
+        "fwd_ret_20d": pd.Series(dtype="float64"),
+    })
+    empty_df.to_parquet(feature_dir / "features.parquet", index=False)
+
+    paths = ProjectPaths(
+        repo_root=tmp_path,
+        raw_txt=tmp_path / "data" / "raw_txt",
+        raw_manifest=tmp_path / "manifest.json",
+        validated=tmp_path / "data" / "validated",
+        normalized=tmp_path / "data" / "normalized",
+        causal=tmp_path / "data" / "causal",
+        research_ohlcv_daily=tmp_path / "research_ohlcv_daily",
+        labeled_target_h20=tmp_path / "targets",
+        feature_matrix_baseline_h20=feature_dir,
+        feature_matrix_expanded_h20=tmp_path / "feature_matrix_expanded_h20",
+        frozen_features_expanded_h20_v1=tmp_path / "frozen",
+        oos_predictions_baseline_h20=oos_dir,
+        validation_reports=tmp_path / "reports" / "validation",
+        label_reports=tmp_path / "reports" / "labels",
+        feature_reports=tmp_path / "reports" / "features",
+        wfa_reports=wfa_dir,
+        metrics_reports=tmp_path / "reports" / "metrics",
+        gates_reports=tmp_path / "reports" / "gates",
+    )
+
+    with patch("quant_project_daily.baseline_wfa.load_model_config", return_value={
+        "model_type": "ridge", "ridge_alpha": 1.0, "target_column": "target_class_20d",
+    }), patch("quant_project_daily.baseline_wfa.reset_parquet_output_dir"), pytest.raises(RuntimeError, match="fold.*failed"):
+        run_baseline_wfa(paths=paths)

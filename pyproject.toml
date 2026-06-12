@@ -10,6 +10,9 @@ dependencies = [
   "pandas",
   "pyarrow",
   "PyYAML",
+  "numpy",
+  "polars",
+  "scikit-learn",
 ]
 
 [tool.setuptools.packages.find]

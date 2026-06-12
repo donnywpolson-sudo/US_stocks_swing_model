@@ -177,6 +177,15 @@ def validate_raw_files(files: list[Path], progress_every: int | None = None) -> 
             rejected_frames.append(detail)
         invalid |= dup
 
+        bad_openint = df["openint"].isna()
+        reason_counts["bad_numeric_openint"] += int(bad_openint.sum())
+        if bad_openint.any():
+            detail = df.loc[bad_openint, ["source_file", "raw_ticker", "ticker", "date", "open", "high", "low", "close", "vol"]].copy()
+            detail["reason"] = "bad_numeric_openint"
+            detail = detail.rename(columns={"vol": "volume"})
+            rejected_frames.append(detail)
+        invalid |= bad_openint
+
         zero_vol = (df["vol"] == 0) & ~invalid
         warning_counts["zero_volume_bar"] += int(zero_vol.sum())
         if zero_vol.any():
@@ -205,7 +214,7 @@ def validate_raw_files(files: list[Path], progress_every: int | None = None) -> 
 
             clean["date"] = clean["parsed_date"].dt.date
             clean["volume"] = clean["vol"].astype("int64")
-            clean["openint"] = clean["openint"].fillna(0).astype("int64")
+            clean["openint"] = clean["openint"].astype("int64")
             clean["year"] = clean["parsed_date"].dt.year.astype("int64")
             valid_frames.append(clean[VALIDATED_COLUMNS])
 
@@ -217,18 +226,22 @@ def validate_raw_files(files: list[Path], progress_every: int | None = None) -> 
         valid = valid.sort_values(["ticker", "date"], kind="mergesort").reset_index(drop=True)
 
     rejected = sum(reason_counts.values()) - reason_counts["file_parse_error"]
+    rejected_rows = pd.concat(rejected_frames, ignore_index=True) if rejected_frames else pd.DataFrame()
+    unique_rejected_rows = int(rejected_rows["date"].drop_duplicates().count()) if not rejected_rows.empty and "date" in rejected_rows.columns else 0
+    reason_event_total = int(sum(reason_counts.values()))
     summary = _base_summary(len(files))
     summary.update(
         {
             "rows_read": int(rows_read),
             "valid_rows": int(len(valid)),
             "rejected_rows": int(rejected),
+            "unique_rejected_rows": unique_rejected_rows,
+            "rejection_reason_event_count": reason_event_total,
             "warning_rows": int(sum(warning_counts.values())),
             "reject_reasons": dict(reason_counts),
             "warning_reasons": dict(warning_counts),
         }
     )
-    rejected_rows = pd.concat(rejected_frames, ignore_index=True) if rejected_frames else pd.DataFrame()
     zero_volume_rows = pd.concat(zero_volume_frames, ignore_index=True) if zero_volume_frames else pd.DataFrame()
     split_like_gaps = pd.concat(split_gap_frames, ignore_index=True) if split_gap_frames else pd.DataFrame()
     return ValidationResult(

@@ -182,14 +182,19 @@ def _sample_txt_schema(
     }
 
     try:
-        raw = archive.read(inner_path)
-        encoding = _detect_encoding(raw)
-        result["encoding"] = encoding
+        with archive.open(inner_path) as fh:
+            # Read raw bytes for encoding detection from first 8192 bytes
+            sample_bytes = fh.read(8192)
+            encoding = _detect_encoding(sample_bytes)
+            result["encoding"] = encoding
 
-        if encoding == "binary":
-            result["warnings"].append("binary_file_skipped")
-            return result
+            if encoding == "binary":
+                result["warnings"].append("binary_file_skipped")
+                return result
 
+            # Now stream lines, reading in text mode with a byte buffer
+        with archive.open(inner_path) as fh:
+            raw = fh.read()
         text = raw.decode(encoding, errors="replace")
         lines = text.splitlines()
         total_lines = len(lines)

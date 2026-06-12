@@ -227,6 +227,9 @@ def run_baseline_wfa(max_folds: int | None = None, fold_id: int | None = None, p
     }
     (p.wfa_reports / "baseline_h20_oos_summary.json").write_text(json.dumps(summary, indent=2, default=str), encoding="utf-8")
     print(f"[stage15] all_folds_done total_elapsed_seconds={time.perf_counter() - total_started:.1f}", flush=True)
+    if failed:
+        failed_ids = [f["fold_id"] for f in failed]
+        raise RuntimeError(f"{len(failed)} fold(s) failed: {failed_ids}")
     return summary
 
 

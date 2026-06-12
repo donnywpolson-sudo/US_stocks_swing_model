@@ -1,6 +1,7 @@
 import pandas as pd
+import pytest
 
-from quant_project_daily.column_registry import load_baseline_feature_config
+from quant_project_daily.column_registry import build_column_registry, load_baseline_feature_config
 from quant_project_daily.features_baseline import build_baseline_features
 
 
@@ -81,3 +82,16 @@ def test_output_only_label_valid_and_no_leakage_in_feature_cols() -> None:
     forbidden = {"next_open", "exit_close_20d", "fwd_ret_20d", "target_class_20d", "label_valid_20d"}
     assert not (set(result.registry["feature_cols"]) & forbidden)
     assert set(result.registry["feature_cols"]) == set(load_baseline_feature_config()["feature_columns"])
+
+
+def test_missing_configured_features_raises_value_error() -> None:
+    """build_column_registry must fail when configured columns are missing from actual."""
+    cfg = {
+        "feature_columns": ["f1", "f2", "missing_feat"],
+        "target_columns": ["target_class_20d", "missing_target"],
+        "metadata_columns": ["date", "ticker", "missing_meta"],
+        "excluded_columns": ["fwd_ret_20d"],
+    }
+    actual_columns = ["f1", "f2", "date", "ticker", "target_class_20d", "fwd_ret_20d"]
+    with pytest.raises(ValueError, match="configured columns missing"):
+        build_column_registry(actual_columns, cfg)
