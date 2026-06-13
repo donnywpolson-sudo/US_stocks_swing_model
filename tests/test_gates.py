@@ -1,4 +1,31 @@
-from quant_project_daily.gates import evaluate_baseline_gate
+import json
+from pathlib import Path
+
+from quant_project_daily.gates import evaluate_baseline_gate, run_baseline_gate
+from quant_project_daily.config import ProjectPaths
+
+
+def _make_paths(tmp_path: Path) -> ProjectPaths:
+    return ProjectPaths(
+        repo_root=tmp_path,
+        raw_txt=tmp_path,
+        raw_manifest=tmp_path,
+        validated=tmp_path,
+        normalized=tmp_path,
+        causal=tmp_path,
+        research_ohlcv_daily=tmp_path,
+        labeled_target_h20=tmp_path,
+        feature_matrix_baseline_h20=tmp_path,
+        feature_matrix_expanded_h20=tmp_path,
+        frozen_features_expanded_h20_v1=tmp_path,
+        oos_predictions_baseline_h20=tmp_path,
+        validation_reports=tmp_path,
+        label_reports=tmp_path,
+        feature_reports=tmp_path,
+        wfa_reports=tmp_path,
+        metrics_reports=tmp_path / "metrics_reports",
+        gates_reports=tmp_path / "gates_reports",
+    )
 
 
 THRESHOLDS = {
@@ -66,3 +93,42 @@ def test_gate_fail_when_metrics_missing_or_blockers_exist() -> None:
     assert "metrics_file_missing" in missing["failures"]
     assert blocked["status"] == "FAIL"
     assert "metrics_blockers_present" in blocked["failures"]
+
+
+class TestRunBaselineGate:
+    """File-based tests for run_baseline_gate using tmp_path."""
+
+    _passing_metrics = {
+        "total_oos_rows": 2_000_000,
+        "fold_count": 30,
+        "mean_daily_rank_ic": 0.06,
+        "rank_ic_t_stat": 3.0,
+        "long_short_net_return": 0.01,
+        "top_decile_net_return": 0.02,
+        "bottom_decile_net_short_return": 0.01,
+        "score": {"min": -1, "max": 1},
+        "blockers": [],
+        "warnings": [],
+    }
+
+    def test_passing_case(self, tmp_path: Path) -> None:
+        paths = _make_paths(tmp_path)
+        paths.metrics_reports.mkdir(parents=True, exist_ok=True)
+        (paths.metrics_reports / "baseline_h20_metrics_summary.json").write_text(
+            json.dumps(self._passing_metrics), encoding="utf-8"
+        )
+
+        result = run_baseline_gate(paths=paths)
+
+        assert (paths.gates_reports / "baseline_h20_gate.json").exists()
+        assert result["status"] != "FAIL"
+
+    def test_missing_metrics_file(self, tmp_path: Path) -> None:
+        paths = _make_paths(tmp_path)
+        paths.metrics_reports.mkdir(parents=True, exist_ok=True)
+        # no metrics JSON written
+
+        result = run_baseline_gate(paths=paths)
+
+        assert result["status"] == "FAIL"
+        assert "metrics_file_missing" in result["failures"]
