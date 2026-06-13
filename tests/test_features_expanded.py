@@ -2,7 +2,7 @@ import pandas as pd
 
 from quant_project_daily.config import ProjectPaths
 from quant_project_daily.features_baseline import build_baseline_features
-from quant_project_daily.features_expanded import _run_polars, build_expanded_features, load_expanded_feature_config
+from quant_project_daily.features_expanded import _run_polars, build_expanded_features, load_expanded_feature_config, run_expanded_features
 
 
 def _labeled(tickers=("A", "B"), rows=300) -> pd.DataFrame:
@@ -119,3 +119,39 @@ def test_stage20_reads_only_parquet_when_registry_jsons_share_directory(tmp_path
 
     assert summary["output_rows"] > 0
     assert "ret_2d" in registry["feature_cols"]
+
+
+def test_stage20_run_expanded_features(tmp_path, monkeypatch) -> None:
+    monkeypatch.setattr("quant_project_daily.config.REPO_ROOT", tmp_path)
+    paths = ProjectPaths(
+        repo_root=tmp_path,
+        raw_txt=tmp_path / "data" / "raw_txt",
+        raw_manifest=tmp_path / "data" / "raw_manifest" / "raw_manifest.parquet",
+        validated=tmp_path / "data" / "validated",
+        normalized=tmp_path / "data" / "normalized",
+        causal=tmp_path / "data" / "causal",
+        research_ohlcv_daily=tmp_path / "data" / "research_ohlcv_daily",
+        labeled_target_h20=tmp_path / "data" / "labeled" / "target_h20",
+        feature_matrix_baseline_h20=tmp_path / "data" / "feature_matrices" / "baseline_h20",
+        feature_matrix_expanded_h20=tmp_path / "data" / "feature_matrices" / "expanded_h20",
+        frozen_features_expanded_h20_v1=tmp_path / "data" / "frozen_features" / "expanded_h20_v1",
+        oos_predictions_baseline_h20=tmp_path / "data" / "oos_predictions" / "baseline_h20",
+        validation_reports=tmp_path / "reports" / "validation",
+        label_reports=tmp_path / "reports" / "labels",
+        feature_reports=tmp_path / "reports" / "features",
+        wfa_reports=tmp_path / "reports" / "wfa",
+        metrics_reports=tmp_path / "reports" / "metrics",
+        gates_reports=tmp_path / "reports" / "gates",
+    )
+    paths.feature_matrix_baseline_h20.mkdir(parents=True)
+    _baseline_matrix(rows=80).to_parquet(paths.feature_matrix_baseline_h20 / "baseline_h20.parquet", index=False)
+
+    summary = run_expanded_features(paths)
+
+    assert summary["output_rows"] > 0
+    assert (paths.feature_matrix_expanded_h20 / "expanded_h20.parquet").exists()
+    assert (paths.feature_matrix_expanded_h20 / "feature_cols.json").exists()
+    assert (paths.feature_matrix_expanded_h20 / "target_cols.json").exists()
+    assert (paths.feature_matrix_expanded_h20 / "metadata_cols.json").exists()
+    assert (paths.feature_matrix_expanded_h20 / "excluded_cols.json").exists()
+    assert (paths.feature_reports / "expanded_h20_summary.json").exists()
