@@ -1,31 +1,20 @@
 # Google Colab + GitHub Workflow
 
-This file is a copy/paste guide for using a normal GitHub Python repo inside Google Colab, editing files, running tests, committing changes, pushing a branch, and opening a pull request.
+Use this repo from Google Colab: clone -> edit -> test -> commit -> push -> open PR.
 
 Configured repo:
 
 ```text
 GitHub repo: donnywpolson-sudo/US_stocks_swing_model
 Colab path:  /content/US_stocks_swing_model
+Branch:      colab-work
 ```
 
-To reuse this for another repo, change only:
+Colab is temporary. Changes disappear unless you commit and push.
 
-```python
-REPO_SLUG = "donnywpolson-sudo/US_stocks_swing_model"
-```
+Do not paste or commit secrets, tokens, API keys, patient/work data, or generated artifacts.
 
----
-
-## 0. Rules
-
-Colab is temporary. Any file changes vanish unless you commit and push them to GitHub.
-
-Do not paste or print secrets, GitHub tokens, API keys, passwords, patient/work data, or proprietary work files.
-
-Use `%cd`, not `!cd`, when changing directories manually in Colab. `%cd` persists across cells. `!cd` does not.
-
-Do not commit generated data/artifacts unless intentionally approved. This workflow blocks common artifact folders:
+Blocked artifact folders in this workflow:
 
 ```text
 data/
@@ -36,19 +25,15 @@ models/
 
 ---
 
-## 1. Create a GitHub token
+## 1. Create GitHub token once
 
-You need a GitHub Personal Access Token to push from Colab.
-
-Use a **fine-grained token**.
-
-GitHub path:
+Create a fine-grained GitHub Personal Access Token:
 
 ```text
-GitHub â profile photo â Settings â Developer settings â Personal access tokens â Fine-grained tokens â Generate new token
+GitHub -> Settings -> Developer settings -> Personal access tokens -> Fine-grained tokens -> Generate new token
 ```
 
-Recommended settings:
+Recommended token settings:
 
 ```text
 Token name: Colab US stocks push
@@ -59,90 +44,61 @@ Repository: US_stocks_swing_model
 Permissions:
   Contents: Read and write
   Metadata: Read-only
+Optional only if editing .github/workflows/:
+  Workflows: Read and write
 ```
 
-Only add this extra permission if you need to edit GitHub Actions files under `.github/workflows/`:
-
-```text
-Workflows: Read and write
-```
-
-After generating the token, copy it immediately. It usually starts with:
-
-```text
-github_pat_...
-```
+Copy the token immediately. It usually starts with `github_pat_...`.
 
 ---
 
 ## 2. Add token to Colab Secrets
 
-In Google Colab:
+In Colab:
 
 ```text
-Left sidebar â key icon / Secrets â Add new secret
+Left sidebar -> Secrets/key icon -> Add new secret
 Name: GITHUB_TOKEN
-Value: paste your github_pat_... token
+Value: paste github_pat_... token
 Notebook access: ON
 ```
 
-Never paste the token into a normal code cell, markdown cell, chat, screenshot, or committed file.
-
-Test secret loading without printing the token:
+Test without printing the token:
 
 ```python
 from google.colab import userdata
 
 token = userdata.get("GITHUB_TOKEN")
 print("Token loaded:", bool(token))
-print("Token prefix OK:", token.startswith(("github_pat_", "ghp_")) if token else False)
+print("Prefix OK:", token.startswith(("github_pat_", "ghp_")) if token else False)
 ```
 
 ---
 
-## 3. One-cell setup script
+## 3. One-cell setup
 
-Open a new Colab notebook and run this entire cell.
-
-It will:
-
-- load your GitHub token from Colab Secrets
-- clone the repo if missing
-- enter the repo folder
-- create or switch to a working branch
-- install dependencies
-- run available tests
-- show Git status
+Run this in a new Colab code cell.
 
 ```python
-# ==========================================
-# GOOGLE COLAB â GITHUB SETUP WORKFLOW
-# Repo: donnywpolson-sudo/US_stocks_swing_model
-# ==========================================
-
 import os
 import sys
 import subprocess
 from pathlib import Path
 
-# -------- USER SETTINGS --------
 REPO_SLUG = "donnywpolson-sudo/US_stocks_swing_model"
 BRANCH = "colab-work"
 GIT_NAME = "Donny Polson"
 GIT_EMAIL = "donnywpolson@gmail.com"
-
 RUN_INSTALL = True
 RUN_TESTS = True
-# -------------------------------
 
 REPO_NAME = REPO_SLUG.split("/")[-1]
 REPO_DIR = Path("/content") / REPO_NAME
 CLEAN_REMOTE = f"https://github.com/{REPO_SLUG}.git"
 
 
-def run(cmd, cwd=None, check=True, display=None, env=None):
-    """Run a shell command safely. Use display=... to avoid printing secrets."""
-    shown = display if display is not None else " ".join(map(str, cmd))
+def run(cmd, cwd=None, check=True, display=None):
+    shown = display or " ".join(map(str, cmd))
     print(f"\n$ {shown}")
     p = subprocess.run(
         list(map(str, cmd)),
@@ -150,7 +106,6 @@ def run(cmd, cwd=None, check=True, display=None, env=None):
         text=True,
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
-        env=env,
     )
     print(p.stdout)
     if check and p.returncode != 0:
@@ -170,7 +125,7 @@ def get_token(required=False):
 
 
 def clone_or_enter_repo():
-    token = get_token(required=False)
+    token = get_token(False)
 
     if not REPO_DIR.exists():
         if token:
@@ -183,21 +138,19 @@ def clone_or_enter_repo():
         else:
             run(["git", "clone", CLEAN_REMOTE, str(REPO_DIR)], cwd="/content")
     else:
-        print(f"Repo folder already exists: {REPO_DIR}")
+        print(f"Repo already exists: {REPO_DIR}")
 
     if not (REPO_DIR / ".git").exists():
         raise SystemExit(f"Not a Git repo: {REPO_DIR}")
 
     os.chdir(REPO_DIR)
     run(["git", "remote", "set-url", "origin", CLEAN_REMOTE], cwd=REPO_DIR, check=False)
-    print(f"\nUsing repo folder: {REPO_DIR}")
+    print(f"\nUsing repo: {REPO_DIR}")
 
 
-def setup_git_branch():
+def setup_branch():
     run(["git", "config", "user.name", GIT_NAME], cwd=REPO_DIR)
     run(["git", "config", "user.email", GIT_EMAIL], cwd=REPO_DIR)
-
-    # Fetch may fail for private repos if tokenless remote is used. Not fatal for setup.
     run(["git", "fetch", "origin"], cwd=REPO_DIR, check=False)
 
     existing = run(["git", "branch", "--list", BRANCH], cwd=REPO_DIR, check=False).stdout.strip()
@@ -206,58 +159,32 @@ def setup_git_branch():
     else:
         run(["git", "checkout", "-b", BRANCH], cwd=REPO_DIR)
 
-    run(["git", "branch", "--show-current"], cwd=REPO_DIR, check=False)
-
 
 def install_dependencies():
     run([sys.executable, "-m", "pip", "install", "-U", "pip", "pytest"], cwd=REPO_DIR)
-
     req = REPO_DIR / "requirements.txt"
     if req.exists():
         run([sys.executable, "-m", "pip", "install", "-r", "requirements.txt"], cwd=REPO_DIR)
     else:
-        run(
-            [
-                sys.executable,
-                "-m",
-                "pip",
-                "install",
-                "pandas",
-                "numpy",
-                "pyarrow",
-                "pyyaml",
-                "scikit-learn",
-                "matplotlib",
-            ],
-            cwd=REPO_DIR,
-        )
+        run([
+            sys.executable, "-m", "pip", "install",
+            "pandas", "numpy", "pyarrow", "pyyaml", "scikit-learn", "matplotlib",
+        ], cwd=REPO_DIR)
 
 
 def run_checks():
-    scripts_dir = REPO_DIR / "scripts"
-    if scripts_dir.exists():
-        py_files = sorted(scripts_dir.rglob("*.py"))
-        if py_files:
-            print(f"\nCompiling {len(py_files)} script files...")
-            for py in py_files:
-                rel = py.relative_to(REPO_DIR)
-                run([sys.executable, "-m", "py_compile", str(rel)], cwd=REPO_DIR, check=False)
+    scripts = sorted((REPO_DIR / "scripts").rglob("*.py")) if (REPO_DIR / "scripts").exists() else []
+    for py in scripts:
+        run([sys.executable, "-m", "py_compile", str(py.relative_to(REPO_DIR))], cwd=REPO_DIR, check=False)
 
-    tests_dir = REPO_DIR / "tests"
-    if tests_dir.exists():
+    if (REPO_DIR / "tests").exists():
         run([sys.executable, "-m", "pytest", "-q"], cwd=REPO_DIR, check=False)
     else:
-        print("\nNo tests/ folder found. Skipping pytest.")
-
-
-def show_status():
-    run(["git", "status", "--short"], cwd=REPO_DIR, check=False)
-    print("\nReady. Edit files from Colab left sidebar:")
-    print(f"Files â {REPO_NAME}")
+        print("No tests/ folder found. Skipping pytest.")
 
 
 clone_or_enter_repo()
-setup_git_branch()
+setup_branch()
 
 if RUN_INSTALL:
     install_dependencies()
@@ -265,42 +192,66 @@ if RUN_INSTALL:
 if RUN_TESTS:
     run_checks()
 
-show_status()
+run(["git", "status", "--short"], cwd=REPO_DIR, check=False)
+print(f"\nReady. Edit files from: Left sidebar -> Files -> {REPO_NAME}")
 ```
 
 ---
 
-## 4. Edit files in Colab
+## 4. Colab agentic prompt
 
-Use the Colab file browser:
+Paste this into the Colab AI/Gemini prompt box, not a code cell.
 
 ```text
-Left sidebar â Files â US_stocks_swing_model
+You are a careful coding agent inside Google Colab.
+
+Repo:
+/content/US_stocks_swing_model
+
+Task:
+[PASTE EXACT CODING TASK HERE]
+
+Hard rules:
+1. Work only inside /content/US_stocks_swing_model.
+2. Do not edit .git/, data/, reports/, logs/, models/, .env, secrets, tokens, credentials, or large generated files.
+3. Do not commit or push. I will do that manually after review.
+4. Before editing, inspect:
+   - git status --short
+   - repo tree
+   - relevant scripts/tests/configs
+5. Make the smallest correct change.
+6. Preserve existing public function names and test intent unless the task explicitly requires otherwise.
+7. Run checks after editing:
+   - python -m py_compile on changed Python files
+   - python -m pytest -q
+8. If tests fail, fix only the related issue. Do not hide failures.
+9. End with:
+   - files changed
+   - git diff --stat
+   - tests run
+   - pass/fail result
+   - any manual review needed
+10. If you cannot edit files directly, return one valid unified diff only, starting with diff --git.
+
+Start by running:
+cd /content/US_stocks_swing_model
+git status --short
+find . -maxdepth 2 -type f | sort | head -200
+python -m pytest -q
 ```
 
-Open files under folders like:
+Example task:
 
 ```text
-scripts/
-tests/
-configs/
-docs/
-```
-
-Do not edit or commit generated artifacts unless you intentionally mean to:
-
-```text
-data/
-reports/
-logs/
-models/
+Task:
+Fix the failing stage23 frozen feature set workflow with the smallest safe patch. Do not change model intent unless tests prove it is necessary.
 ```
 
 ---
 
-## 5. Optional: apply an AI-generated patch
+## 5. Apply an AI-generated patch
 
-Ask AI for a unified diff, then apply it like this:
+Use only when the agent returns a real unified diff beginning with `diff --git`.
 
 ```python
 %%bash
@@ -315,7 +266,7 @@ git status --short
 git diff --stat
 ```
 
-If `git apply --check` fails, do not force it. Ask AI to regenerate the patch against the current file contents.
+If `git apply --check` fails, do not force it. Regenerate the patch against current files.
 
 ---
 
@@ -329,58 +280,34 @@ If `git apply --check` fails, do not force it. Ask AI to regenerate the patch ag
 !git diff --stat
 ```
 
-For a targeted test:
-
-```python
-%cd /content/US_stocks_swing_model
-!python -m pytest tests -q
-```
-
 ---
 
-## 7. Commit and push cell
+## 7. Commit and push
 
-Run this only after you edited files and reviewed the diff.
-
-It will:
-
-- block accidental commits from `data/`, `reports/`, `logs/`, and `models/`
-- block files over 25 MB
-- show status and diff stats
-- commit
-- push the branch to GitHub
-- print the pull request link
+Run only after reviewing the diff.
 
 ```python
-# ==========================================
-# COMMIT + PUSH FROM COLAB TO GITHUB
-# ==========================================
-
 import os
-import sys
 import subprocess
 from pathlib import Path
 
 REPO_SLUG = "donnywpolson-sudo/US_stocks_swing_model"
-REPO_NAME = REPO_SLUG.split("/")[-1]
-REPO_DIR = Path("/content") / REPO_NAME
 BRANCH = "colab-work"
 COMMIT_MESSAGE = "Colab update"
-
-BLOCKED_TOP_LEVEL_DIRS = {"data", "reports", "logs", "models"}
+REPO_DIR = Path("/content") / REPO_SLUG.split("/")[-1]
+BLOCKED_DIRS = {"data", "reports", "logs", "models"}
 MAX_FILE_MB = 25
 
 
-def run(cmd, cwd=REPO_DIR, check=True, display=None, env=None):
-    shown = display if display is not None else " ".join(map(str, cmd))
+def run(cmd, check=True, display=None):
+    shown = display or " ".join(map(str, cmd))
     print(f"\n$ {shown}")
     p = subprocess.run(
         list(map(str, cmd)),
-        cwd=str(cwd),
+        cwd=str(REPO_DIR),
         text=True,
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
-        env=env,
     )
     print(p.stdout)
     if check and p.returncode != 0:
@@ -389,47 +316,31 @@ def run(cmd, cwd=REPO_DIR, check=True, display=None, env=None):
 
 
 def get_token():
-    try:
-        from google.colab import userdata
-        token = userdata.get("GITHUB_TOKEN")
-    except Exception:
-        token = None
+    from google.colab import userdata
+    token = userdata.get("GITHUB_TOKEN")
     if not token:
         raise SystemExit("Missing Colab Secret: GITHUB_TOKEN")
     return token
 
 
 def changed_files():
-    out = run(["git", "status", "--porcelain"], check=False).stdout.splitlines()
-    files = []
-    for line in out:
-        if not line.strip():
-            continue
-        # Handles normal porcelain lines like: ' M path' or '?? path'
-        path = line[3:].strip()
-        if path:
-            files.append(path)
-    return files
+    lines = run(["git", "status", "--porcelain"], check=False).stdout.splitlines()
+    return [line[3:].strip() for line in lines if line.strip() and line[3:].strip()]
 
 
 def safety_check(files):
     problems = []
     for f in files:
-        top = f.split("/", 1)[0]
-        if top in BLOCKED_TOP_LEVEL_DIRS:
+        if f.split("/", 1)[0] in BLOCKED_DIRS:
             problems.append(f"blocked artifact folder: {f}")
-
         p = REPO_DIR / f
-        if p.exists() and p.is_file():
-            size_mb = p.stat().st_size / (1024 * 1024)
-            if size_mb > MAX_FILE_MB:
-                problems.append(f"file too large ({size_mb:.1f} MB): {f}")
-
+        if p.exists() and p.is_file() and p.stat().st_size > MAX_FILE_MB * 1024 * 1024:
+            problems.append(f"file too large: {f}")
     if problems:
         print("\nSAFETY BLOCKED COMMIT")
         for item in problems:
             print(" -", item)
-        raise SystemExit("Refusing to commit blocked or large files.")
+        raise SystemExit("Refusing to commit.")
 
 
 if not (REPO_DIR / ".git").exists():
@@ -443,7 +354,6 @@ if not files:
     print("No changes to commit.")
 else:
     safety_check(files)
-
     run(["git", "status", "--short"], check=False)
     run(["git", "diff", "--stat"], check=False)
     run(["git", "diff", "--", "."], check=False)
@@ -466,9 +376,9 @@ else:
 
 ---
 
-## 8. Open the pull request
+## 8. Open PR
 
-After pushing, open:
+After push:
 
 ```text
 https://github.com/donnywpolson-sudo/US_stocks_swing_model/compare/main...colab-work
@@ -483,126 +393,24 @@ compare: colab-work
 
 ---
 
-## 9. Useful AI prompts
+## 9. Quick troubleshooting
 
-### Prompt A â safe code edit
+### Colab GitHub browser says no results
 
-```text
-You are editing my GitHub repo in Google Colab.
+That usually means the repo has no `.ipynb` notebook files. Use `git clone` in a code cell instead.
 
-Repo: donnywpolson-sudo/US_stocks_swing_model
-Task: [describe the exact task]
+### `git status` says not a Git repo
 
-Allowed files:
-- [list exact files]
-
-Hard constraints:
-- Do not edit data/, reports/, logs/, models/, or generated artifacts.
-- Do not add secrets, tokens, passwords, credentials, or API keys.
-- Do not make broad refactors.
-- Preserve existing public function names unless absolutely necessary.
-- Prefer the smallest patch that fixes the issue.
-
-Return:
-1. Short plan
-2. Exact files to change
-3. Unified diff only
-4. Tests to run in Colab
-```
-
-### Prompt B â test failure fix
-
-```text
-I am running this repo in Google Colab:
-
-donnywpolson-sudo/US_stocks_swing_model
-
-Here is the failing command:
-[paste command]
-
-Here is the full error output:
-[paste traceback]
-
-Fix request:
-- Diagnose root cause.
-- Provide the smallest safe patch.
-- Do not edit generated artifacts.
-- Do not change test intent just to make tests pass.
-- Return a unified diff I can apply with git apply.
-```
-
-### Prompt C â code review before commit
-
-```text
-Review this git diff before I commit.
-
-Goal:
-[describe task]
-
-Diff:
-[paste git diff]
-
-Check for:
-- logic bugs
-- data leakage
-- brittle paths
-- accidental generated artifact changes
-- missing tests
-- overbroad edits
-
-Return:
-1. Commit / do not commit recommendation
-2. Any must-fix issues
-3. Suggested commit message
-```
-
-### Prompt D â pull request description
-
-```text
-Write a concise GitHub pull request description.
-
-Repo: donnywpolson-sudo/US_stocks_swing_model
-Branch: colab-work
-
-Goal:
-[describe goal]
-
-Changed files:
-[paste git diff --stat]
-
-Tests run:
-[paste test commands and results]
-
-Format:
-- Summary
-- Changes
-- Tests
-- Risk / notes
-```
-
----
-
-## 10. Common problems
-
-### Problem: Colab says âNo resultsâ when opening GitHub repo
-
-That usually means Colab is looking for `.ipynb` notebook files. A normal Python repo will not show there. Use `git clone` from a Colab code cell instead.
-
-### Problem: `cd` did not persist
-
-Use:
+Run:
 
 ```python
 %cd /content/US_stocks_swing_model
+!git status
 ```
 
-Do not use:
+Use `%cd`, not `!cd`.
 
-```python
-!cd /content/US_stocks_swing_model
-```
-
-### Problem: authentication failed on push
+### Push authentication failed
 
 Check:
 
@@ -611,16 +419,16 @@ from google.colab import userdata
 print(bool(userdata.get("GITHUB_TOKEN")))
 ```
 
-Then verify the GitHub token has:
+Then confirm token permissions:
 
 ```text
 Repository: US_stocks_swing_model
 Contents: Read and write
 ```
 
-### Problem: push rejected
+### Push rejected
 
-Create a new branch name and push again:
+Use a new branch:
 
 ```python
 %cd /content/US_stocks_swing_model
@@ -628,9 +436,7 @@ Create a new branch name and push again:
 !git push -u origin colab-work-2
 ```
 
-### Problem: accidentally edited generated files
-
-Reset unwanted files before commit:
+### Accidentally edited generated files
 
 ```python
 %cd /content/US_stocks_swing_model
@@ -638,23 +444,4 @@ Reset unwanted files before commit:
 !git status --short
 ```
 
----
-
-## 11. Minimal daily workflow
-
-```python
-# Setup
-%cd /content
-!git clone https://github.com/donnywpolson-sudo/US_stocks_swing_model.git
-%cd /content/US_stocks_swing_model
-!git checkout -b colab-work
-!python -m pip install -r requirements.txt || python -m pip install pytest pandas numpy pyarrow pyyaml scikit-learn
-
-# Edit files in left sidebar, then test
-!python -m pytest -q
-!git status --short
-!git diff --stat
-
-# Commit/push using the full commit cell above
-```
 
