@@ -1,0 +1,44 @@
+﻿{
+    "files.watcherExclude":  {
+                                 "**/.git/objects/**":  true,
+                                 "**/.git/subtree-cache/**":  true,
+                                 "**/.venv/**":  true,
+                                 "**/venv/**":  true,
+                                 "**/node_modules/**":  true,
+                                 "**/__pycache__/**":  true,
+                                 "**/.pytest_cache/**":  true,
+                                 "**/.mypy_cache/**":  true,
+                                 "**/.ruff_cache/**":  true,
+                                 "**/data/**":  true,
+                                 "**/reports/**":  true,
+                                 "**/models/**":  true,
+                                 "**/*.parquet":  true,
+                                 "**/*.dbn":  true,
+                                 "**/*.zst":  true
+                             },
+    "search.exclude":  {
+                           "**/.venv/**":  true,
+                           "**/venv/**":  true,
+                           "**/node_modules/**":  true,
+                           "**/__pycache__/**":  true,
+                           "**/.pytest_cache/**":  true,
+                           "**/.mypy_cache/**":  true,
+                           "**/.ruff_cache/**":  true,
+                           "**/data/**":  true,
+                           "**/reports/**":  true,
+                           "**/models/**":  true,
+                           "**/*.parquet":  true,
+                           "**/*.dbn":  true,
+                           "**/*.zst":  true
+                       },
+    "python.analysis.exclude":  [
+                                    "**/.venv/**",
+                                    "**/venv/**",
+                                    "**/data/**",
+                                    "**/reports/**",
+                                    "**/models/**"
+                                ],
+    "python.analysis.userFileIndexingLimit":  500,
+    "python.analysis.useLibraryCodeForTypes":  false,
+    "python.analysis.autoImportCompletions":  false
+}
