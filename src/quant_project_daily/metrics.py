@@ -28,10 +28,10 @@ def read_oos_predictions(path: Path) -> pd.DataFrame:
 def rank_ic_by_date(preds: pd.DataFrame) -> pd.DataFrame:
     rows = []
     for date, g in preds.groupby("date", sort=True):
-        if len(g) < 2 or g["pred_score_20d"].nunique() < 2 or g["fwd_ret_20d"].nunique() < 2:
+        if len(g) < 2 or g["pred_score_5d"].nunique() < 2 or g["fwd_ret_5d"].nunique() < 2:
             ic = np.nan
         else:
-            ic = g["pred_score_20d"].corr(g["fwd_ret_20d"], method="spearman")
+            ic = g["pred_score_5d"].corr(g["fwd_ret_5d"], method="spearman")
         rows.append({"date": date, "row_count": len(g), "rank_ic": ic})
     return pd.DataFrame(rows)
 
@@ -61,10 +61,10 @@ def build_metrics(preds: pd.DataFrame, cfg: dict[str, Any]) -> tuple[dict[str, o
 
     df = preds.copy()
     df["date"] = pd.to_datetime(df["date"]).dt.date
-    missing_rows = int(df[["pred_score_20d", "fwd_ret_20d"]].isna().any(axis=1).sum())
+    missing_rows = int(df[["pred_score_5d", "fwd_ret_5d"]].isna().any(axis=1).sum())
     if missing_rows:
         warnings.append("missing_or_null_prediction_rows")
-    df = df.dropna(subset=["pred_score_20d", "fwd_ret_20d"]).copy()
+    df = df.dropna(subset=["pred_score_5d", "fwd_ret_5d"]).copy()
 
     deciles = int(cfg.get("decile_buckets", 10))
     quintiles = int(cfg.get("quintile_buckets", 5))
@@ -86,7 +86,7 @@ def build_metrics(preds: pd.DataFrame, cfg: dict[str, Any]) -> tuple[dict[str, o
     daily_ls = daily_long_short_from_buckets(df, "decile", deciles, 1, cost_bps)
     ic_by_date = rank_ic_by_date(df)
 
-    score_stats = _score_stats(df["pred_score_20d"])
+    score_stats = _score_stats(df["pred_score_5d"])
     ic = ic_by_date["rank_ic"].dropna()
     rank_ic_t = float(ic.mean() / (ic.std(ddof=1) / np.sqrt(len(ic)))) if len(ic) > 1 and ic.std(ddof=1) != 0 else None
 
@@ -94,7 +94,7 @@ def build_metrics(preds: pd.DataFrame, cfg: dict[str, Any]) -> tuple[dict[str, o
     for fold_id, g in df.groupby("fold_id", sort=True):
         fold_daily = daily_long_short_from_buckets(g.assign(decile=assign_score_buckets(g, deciles)), "decile", deciles, 1, cost_bps)
         fold_ic = rank_ic_by_date(g)["rank_ic"].dropna()
-        stats = _score_stats(g["pred_score_20d"])
+        stats = _score_stats(g["pred_score_5d"])
         outlier = bool(max(abs(stats["min"] or 0), abs(stats["max"] or 0)) > outlier_threshold)
         if outlier:
             warnings.append(f"fold_{int(fold_id)}_score_outlier")
@@ -115,8 +115,8 @@ def build_metrics(preds: pd.DataFrame, cfg: dict[str, Any]) -> tuple[dict[str, o
     score_diag = fold_metrics[["fold_id", "row_count", "score_mean", "score_std", "score_min", "score_max"]].copy()
     score_diag["abs_score_outlier"] = score_diag[["score_min", "score_max"]].abs().max(axis=1) > outlier_threshold
 
-    decile_mean = decile_returns.groupby("decile")["mean_fwd_ret_20d"].mean().to_dict()
-    quintile_mean = quintile_returns.groupby("quintile")["mean_fwd_ret_20d"].mean().to_dict()
+    decile_mean = decile_returns.groupby("decile")["mean_fwd_ret_5d"].mean().to_dict()
+    quintile_mean = quintile_returns.groupby("quintile")["mean_fwd_ret_5d"].mean().to_dict()
     summary = {
         "total_oos_rows": int(len(df)),
         "min_date": str(min(df["date"])),
@@ -155,11 +155,11 @@ def build_metrics(preds: pd.DataFrame, cfg: dict[str, Any]) -> tuple[dict[str, o
 def run_metrics(paths: ProjectPaths | None = None) -> dict[str, object]:
     p = paths or project_paths()
     cfg = load_execution_costs()
-    summary, reports = build_metrics(read_oos_predictions(p.oos_predictions_baseline_h20), cfg)
+    summary, reports = build_metrics(read_oos_predictions(p.oos_predictions_baseline_h5), cfg)
     p.metrics_reports.mkdir(parents=True, exist_ok=True)
     for name, df in reports.items():
-        df.to_csv(p.metrics_reports / f"baseline_h20_{name}.csv", index=False)
-    (p.metrics_reports / "baseline_h20_metrics_summary.json").write_text(
+        df.to_csv(p.metrics_reports / f"baseline_h5_{name}.csv", index=False)
+    (p.metrics_reports / "baseline_h5_metrics_summary.json").write_text(
         json.dumps(summary, indent=2, default=str),
         encoding="utf-8",
     )

@@ -12,9 +12,9 @@ from quant_project_daily.feature_selection import freeze_feature_set, run_featur
 
 def _cfg() -> dict[str, object]:
     return {
-        "version": "expanded_h20_v1",
-        "target_column": "fwd_ret_20d",
-        "class_target_column": "target_class_20d",
+        "version": "expanded_h5_v1",
+        "target_column": "fwd_ret_5d",
+        "class_target_column": "target_class_5d",
         "max_selected_features": 2,
         "min_non_null_pct": 0.50,
         "min_finite_pct": 0.99,
@@ -37,11 +37,11 @@ def _paths(tmp_path) -> ProjectPaths:
         normalized=tmp_path / "data" / "normalized",
         causal=tmp_path / "data" / "causal",
         research_ohlcv_daily=tmp_path / "data" / "research_ohlcv_daily",
-        labeled_target_h20=tmp_path / "data" / "labeled" / "target_h20",
-        feature_matrix_baseline_h20=tmp_path / "data" / "feature_matrices" / "baseline_h20",
-        feature_matrix_expanded_h20=tmp_path / "data" / "feature_matrices" / "expanded_h20",
-        frozen_features_expanded_h20_v1=tmp_path / "data" / "frozen_features" / "expanded_h20_v1",
-        oos_predictions_baseline_h20=tmp_path / "data" / "oos_predictions" / "baseline_h20",
+        labeled_target_h5=tmp_path / "data" / "labeled" / "target_h5",
+        feature_matrix_baseline_h5=tmp_path / "data" / "feature_matrices" / "baseline_h5",
+        feature_matrix_expanded_h5=tmp_path / "data" / "feature_matrices" / "expanded_h5",
+        frozen_features_expanded_h5_v1=tmp_path / "data" / "frozen_features" / "expanded_h5_v1",
+        oos_predictions_baseline_h5=tmp_path / "data" / "oos_predictions" / "baseline_h5",
         validation_reports=tmp_path / "reports" / "validation",
         label_reports=tmp_path / "reports" / "labels",
         feature_reports=tmp_path / "reports" / "features",
@@ -63,7 +63,7 @@ def test_discovery_uses_train_dates_only_not_test_dates() -> None:
                     "date": date,
                     "ticker": ticker,
                     "x": train_value if date_i < 3 else test_value,
-                    "fwd_ret_20d": ticker_i + 1,
+                    "fwd_ret_5d": ticker_i + 1,
                 }
             )
     matrix = pd.DataFrame(rows)
@@ -112,32 +112,32 @@ def test_selection_rejects_leakage_null_constant_and_prunes_correlated() -> None
 def test_freeze_feature_set_writes_manifest_and_schema_outputs(tmp_path, monkeypatch) -> None:
     paths = _paths(tmp_path)
     paths.feature_reports.mkdir(parents=True)
-    pd.DataFrame([{"feature": "strong", "selected": True}]).to_csv(paths.feature_reports / "expanded_h20_selected_features.csv", index=False)
+    pd.DataFrame([{"feature": "strong", "selected": True}]).to_csv(paths.feature_reports / "expanded_h5_selected_features.csv", index=False)
     pd.DataFrame([{"feature": "weak", "selected": False, "reject_reason": "weak_rank_ic"}]).to_csv(
-        paths.feature_reports / "expanded_h20_rejected_features.csv", index=False
+        paths.feature_reports / "expanded_h5_rejected_features.csv", index=False
     )
     monkeypatch.setattr("quant_project_daily.feature_selection.load_feature_selection_config", lambda: _cfg())
 
     manifest = freeze_feature_set(paths)
 
     assert manifest["selected_feature_count"] == 1
-    assert json.loads((paths.frozen_features_expanded_h20_v1 / "feature_cols.json").read_text()) == ["strong"]
-    assert "train-fold-only" in (paths.frozen_features_expanded_h20_v1 / "manifest.json").read_text()
+    assert json.loads((paths.frozen_features_expanded_h5_v1 / "feature_cols.json").read_text()) == ["strong"]
+    assert "train-fold-only" in (paths.frozen_features_expanded_h5_v1 / "manifest.json").read_text()
 
 
 def test_load_matrix_filters_date_typed_parquet_with_split_strings(tmp_path) -> None:
     paths = _paths(tmp_path)
-    paths.feature_matrix_expanded_h20.mkdir(parents=True)
+    paths.feature_matrix_expanded_h5.mkdir(parents=True)
     pd.DataFrame(
         {
             "date": pd.to_datetime(["2019-12-31", "2020-01-01", "2020-01-02"]).date,
-            "fwd_ret_20d": [0.0, 0.1, 0.2],
+            "fwd_ret_5d": [0.0, 0.1, 0.2],
             "x": [1.0, 2.0, 3.0],
         }
-    ).to_parquet(paths.feature_matrix_expanded_h20 / "expanded_h20.parquet", index=False)
+    ).to_parquet(paths.feature_matrix_expanded_h5 / "expanded_h5.parquet", index=False)
     folds = pd.DataFrame({"train_start_date": ["2020-01-01"], "train_end_date": ["2020-01-02"]})
 
-    out = _load_matrix_for_plan(paths, folds, ["date", "fwd_ret_20d", "x"])
+    out = _load_matrix_for_plan(paths, folds, ["date", "fwd_ret_5d", "x"])
 
     assert out["date"].dt.strftime("%Y-%m-%d").tolist() == ["2020-01-01", "2020-01-02"]
 

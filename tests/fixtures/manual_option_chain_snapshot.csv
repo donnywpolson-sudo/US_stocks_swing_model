@@ -1,0 +1,4 @@
+snapshot_date,underlying_ticker,underlying_price,option_symbol,expiration,strike,call_put,bid,ask,last,volume,open_interest,implied_volatility,delta,gamma,theta,vega,data_source,quote_timestamp
+2026-06-01,AAA,101.25,AAA260619C00100000,2026-06-19,100,C,3.10,3.40,3.25,120,350,0.32,0.55,0.04,-0.03,0.12,manual_fixture,2026-06-01 15:45:00
+2026-06-01,AAA,101.25,AAA260619P00100000,2026-06-19,100,P,2.80,3.20,,,,,,,,,manual_fixture,
+2026-06-01,ZZZ,25.50,ZZZ260717C00025000,2026-07-17,25,C,1.05,1.25,1.10,10,20,0.65,0.48,0.08,-0.02,0.04,manual_fixture,2026-06-01 15:45:00

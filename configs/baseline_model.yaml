@@ -1,6 +1,6 @@
-model_name: baseline_ridge_h20
+model_name: baseline_ridge_h5
 model_type: ridge_regression
-target_column: target_class_20d
-forward_return_column: fwd_ret_20d
-prediction_column: pred_score_20d
+target_column: target_class_5d
+forward_return_column: fwd_ret_5d
+prediction_column: pred_score_5d
 ridge_alpha: 1.0

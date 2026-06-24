@@ -26,14 +26,14 @@ def _labeled(tickers=("A", "B"), rows=300) -> pd.DataFrame:
                     "dollar_volume": close * (1000 + pd.Series(range(rows)) + j),
                     "model_eligible": True,
                     "next_open": open_.shift(-1),
-                    "exit_close_20d": close.shift(-20),
-                    "exit_date_20d": dates.to_series().shift(-20).to_numpy(),
-                    "fwd_ret_20d": close.shift(-20) / open_.shift(-1) - 1,
-                    "has_split_like_gap_in_target_window_20d": False,
-                    "label_valid_20d": True,
-                    "target_class_20d": 0,
-                    "target_long_top20_20d": False,
-                    "target_short_bottom20_20d": False,
+                    "exit_close_5d": close.shift(-5),
+                    "exit_date_5d": dates.to_series().shift(-5).to_numpy(),
+                    "fwd_ret_5d": close.shift(-5) / open_.shift(-1) - 1,
+                    "has_split_like_gap_in_target_window_5d": False,
+                    "label_valid_5d": True,
+                    "target_class_5d": 0,
+                    "target_long_top20_5d": False,
+                    "target_short_bottom20_5d": False,
                 }
             )
         )
@@ -49,13 +49,13 @@ def test_expanded_retains_baseline_and_adds_new_features_no_leakage() -> None:
     cfg = load_expanded_feature_config()
     assert set(cfg["baseline_feature_columns"]).issubset(result.registry["feature_cols"])
     assert set(cfg["new_feature_columns"]).issubset(result.registry["feature_cols"])
-    forbidden = {"next_open", "exit_close_20d", "fwd_ret_20d", "target_class_20d", "label_valid_20d"}
+    forbidden = {"next_open", "exit_close_5d", "fwd_ret_5d", "target_class_5d", "label_valid_5d"}
     assert not (set(result.registry["feature_cols"]) & forbidden)
 
 
 def test_expanded_output_only_label_valid_rows() -> None:
     base = _baseline_matrix(rows=80)
-    base.loc[base.index[:3], "label_valid_20d"] = False
+    base.loc[base.index[:3], "label_valid_5d"] = False
     result = build_expanded_features(base)
     assert len(result.data) == len(base) - 3
 
@@ -98,11 +98,11 @@ def test_stage20_reads_only_parquet_when_registry_jsons_share_directory(tmp_path
         normalized=tmp_path / "data" / "normalized",
         causal=tmp_path / "data" / "causal",
         research_ohlcv_daily=tmp_path / "data" / "research_ohlcv_daily",
-        labeled_target_h20=tmp_path / "data" / "labeled" / "target_h20",
-        feature_matrix_baseline_h20=tmp_path / "data" / "feature_matrices" / "baseline_h20",
-        feature_matrix_expanded_h20=tmp_path / "data" / "feature_matrices" / "expanded_h20",
-        frozen_features_expanded_h20_v1=tmp_path / "data" / "frozen_features" / "expanded_h20_v1",
-        oos_predictions_baseline_h20=tmp_path / "data" / "oos_predictions" / "baseline_h20",
+        labeled_target_h5=tmp_path / "data" / "labeled" / "target_h5",
+        feature_matrix_baseline_h5=tmp_path / "data" / "feature_matrices" / "baseline_h5",
+        feature_matrix_expanded_h5=tmp_path / "data" / "feature_matrices" / "expanded_h5",
+        frozen_features_expanded_h5_v1=tmp_path / "data" / "frozen_features" / "expanded_h5_v1",
+        oos_predictions_baseline_h5=tmp_path / "data" / "oos_predictions" / "baseline_h5",
         validation_reports=tmp_path / "reports" / "validation",
         label_reports=tmp_path / "reports" / "labels",
         feature_reports=tmp_path / "reports" / "features",
@@ -110,10 +110,10 @@ def test_stage20_reads_only_parquet_when_registry_jsons_share_directory(tmp_path
         metrics_reports=tmp_path / "reports" / "metrics",
         gates_reports=tmp_path / "reports" / "gates",
     )
-    paths.feature_matrix_baseline_h20.mkdir(parents=True)
-    _baseline_matrix(rows=80).to_parquet(paths.feature_matrix_baseline_h20 / "baseline_h20.parquet", index=False)
+    paths.feature_matrix_baseline_h5.mkdir(parents=True)
+    _baseline_matrix(rows=80).to_parquet(paths.feature_matrix_baseline_h5 / "baseline_h5.parquet", index=False)
     for name in ["feature_cols", "target_cols", "metadata_cols", "excluded_cols"]:
-        (paths.feature_matrix_baseline_h20 / f"{name}.json").write_text("[]", encoding="utf-8")
+        (paths.feature_matrix_baseline_h5 / f"{name}.json").write_text("[]", encoding="utf-8")
 
     _, summary, registry = _run_polars(paths, load_expanded_feature_config())
 
@@ -131,11 +131,11 @@ def test_stage20_run_expanded_features(tmp_path, monkeypatch) -> None:
         normalized=tmp_path / "data" / "normalized",
         causal=tmp_path / "data" / "causal",
         research_ohlcv_daily=tmp_path / "data" / "research_ohlcv_daily",
-        labeled_target_h20=tmp_path / "data" / "labeled" / "target_h20",
-        feature_matrix_baseline_h20=tmp_path / "data" / "feature_matrices" / "baseline_h20",
-        feature_matrix_expanded_h20=tmp_path / "data" / "feature_matrices" / "expanded_h20",
-        frozen_features_expanded_h20_v1=tmp_path / "data" / "frozen_features" / "expanded_h20_v1",
-        oos_predictions_baseline_h20=tmp_path / "data" / "oos_predictions" / "baseline_h20",
+        labeled_target_h5=tmp_path / "data" / "labeled" / "target_h5",
+        feature_matrix_baseline_h5=tmp_path / "data" / "feature_matrices" / "baseline_h5",
+        feature_matrix_expanded_h5=tmp_path / "data" / "feature_matrices" / "expanded_h5",
+        frozen_features_expanded_h5_v1=tmp_path / "data" / "frozen_features" / "expanded_h5_v1",
+        oos_predictions_baseline_h5=tmp_path / "data" / "oos_predictions" / "baseline_h5",
         validation_reports=tmp_path / "reports" / "validation",
         label_reports=tmp_path / "reports" / "labels",
         feature_reports=tmp_path / "reports" / "features",
@@ -143,15 +143,15 @@ def test_stage20_run_expanded_features(tmp_path, monkeypatch) -> None:
         metrics_reports=tmp_path / "reports" / "metrics",
         gates_reports=tmp_path / "reports" / "gates",
     )
-    paths.feature_matrix_baseline_h20.mkdir(parents=True)
-    _baseline_matrix(rows=80).to_parquet(paths.feature_matrix_baseline_h20 / "baseline_h20.parquet", index=False)
+    paths.feature_matrix_baseline_h5.mkdir(parents=True)
+    _baseline_matrix(rows=80).to_parquet(paths.feature_matrix_baseline_h5 / "baseline_h5.parquet", index=False)
 
     summary = run_expanded_features(paths)
 
     assert summary["output_rows"] > 0
-    assert (paths.feature_matrix_expanded_h20 / "expanded_h20.parquet").exists()
-    assert (paths.feature_matrix_expanded_h20 / "feature_cols.json").exists()
-    assert (paths.feature_matrix_expanded_h20 / "target_cols.json").exists()
-    assert (paths.feature_matrix_expanded_h20 / "metadata_cols.json").exists()
-    assert (paths.feature_matrix_expanded_h20 / "excluded_cols.json").exists()
-    assert (paths.feature_reports / "expanded_h20_summary.json").exists()
+    assert (paths.feature_matrix_expanded_h5 / "expanded_h5.parquet").exists()
+    assert (paths.feature_matrix_expanded_h5 / "feature_cols.json").exists()
+    assert (paths.feature_matrix_expanded_h5 / "target_cols.json").exists()
+    assert (paths.feature_matrix_expanded_h5 / "metadata_cols.json").exists()
+    assert (paths.feature_matrix_expanded_h5 / "excluded_cols.json").exists()
+    assert (paths.feature_reports / "expanded_h5_summary.json").exists()

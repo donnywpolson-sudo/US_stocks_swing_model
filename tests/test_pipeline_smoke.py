@@ -78,16 +78,16 @@ def _feature_cfg() -> dict:
             "rank_dist_to_60d_low", "rank_volume_z_20d", "rank_dollar_volume_z_20d",
         ],
         "target_columns": [
-            "fwd_ret_20d", "label_valid_20d", "target_class_20d",
-            "target_long_top20_20d", "target_short_bottom20_20d",
+            "fwd_ret_5d", "label_valid_5d", "target_class_5d",
+            "target_long_top20_5d", "target_short_bottom20_5d",
         ],
         "metadata_columns": [
             "date", "ticker", "raw_ticker", "open", "high", "low",
             "close", "volume", "dollar_volume", "model_eligible", "year",
         ],
         "excluded_columns": [
-            "next_open", "exit_close_20d", "exit_date_20d",
-            "has_split_like_gap_in_target_window_20d",
+            "next_open", "exit_close_5d", "exit_date_5d",
+            "has_split_like_gap_in_target_window_5d",
         ],
     }
 
@@ -136,12 +136,12 @@ def test_synthetic_daily_pipeline_smoke() -> None:
         ru.data,
         split_gaps=pd.DataFrame(columns=["ticker", "date"]),
         research_start_date="2010-01-01",
-        horizon_days=20,
+        horizon_days=5,
         top_bottom_quantile=0.20,
         excluded_tickers=[],
     )
     assert not tg.data.empty, "targets output empty"
-    assert tg.data["label_valid_20d"].any(), "no label_valid_20d rows"
+    assert tg.data["label_valid_5d"].any(), "no label_valid_5d rows"
 
     # ---- 5. build_baseline_features ----
     feature_result = build_baseline_features(tg.data, cfg=_feature_cfg())
@@ -182,10 +182,10 @@ def test_synthetic_daily_pipeline_smoke() -> None:
 
     # ---- 7. run_fold (single fold) ----
     first_fold = wfa.plan.iloc[0]
-    model_cfg = {"target_column": "target_class_20d", "ridge_alpha": 1.0}
+    model_cfg = {"target_column": "target_class_5d", "ridge_alpha": 1.0}
     fold_result = run_fold(feature_result.data, first_fold, feature_result.registry["feature_cols"], model_cfg)
     assert not fold_result.predictions.empty, "fold predictions empty"
-    for col in ("pred_score_20d", "pred_rank_pct_by_date", "fold_id"):
+    for col in ("pred_score_5d", "pred_rank_pct_by_date", "fold_id"):
         assert col in fold_result.predictions.columns, f"missing column {col}"
 
     # ---- 8. build_metrics ----

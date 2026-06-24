@@ -1,6 +1,6 @@
-feature_set: baseline_h20
-input_path: data/labeled/target_h20
-output_path: data/feature_matrices/baseline_h20
+feature_set: baseline_h5
+input_path: data/labeled/target_h5
+output_path: data/feature_matrices/baseline_h5
 
 feature_columns:
   - ret_1d
@@ -60,11 +60,11 @@ feature_columns:
   - rank_dollar_volume_z_20d
 
 target_columns:
-  - fwd_ret_20d
-  - label_valid_20d
-  - target_class_20d
-  - target_long_top20_20d
-  - target_short_bottom20_20d
+  - fwd_ret_5d
+  - label_valid_5d
+  - target_class_5d
+  - target_long_top20_5d
+  - target_short_bottom20_5d
 
 metadata_columns:
   - date
@@ -81,6 +81,6 @@ metadata_columns:
 
 excluded_columns:
   - next_open
-  - exit_close_20d
-  - exit_date_20d
-  - has_split_like_gap_in_target_window_20d
+  - exit_close_5d
+  - exit_date_5d
+  - has_split_like_gap_in_target_window_5d

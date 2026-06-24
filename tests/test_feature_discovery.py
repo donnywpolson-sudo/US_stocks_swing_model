@@ -13,7 +13,7 @@ from quant_project_daily.feature_discovery import run_feature_discovery
 
 def _tiny_cfg() -> dict[str, object]:
     return {
-        "target_column": "target_class_20d",
+        "target_column": "target_class_5d",
         "leakage_tokens": ["target", "fwd", "future", "label", "exit", "next"],
         "correlation_sample_rows_per_fold": 0,
         "correlation_sample_date_stride": 1,
@@ -29,11 +29,11 @@ def _paths(tmp_path) -> ProjectPaths:
         normalized=tmp_path / "data" / "normalized",
         causal=tmp_path / "data" / "causal",
         research_ohlcv_daily=tmp_path / "data" / "research_ohlcv_daily",
-        labeled_target_h20=tmp_path / "data" / "labeled" / "target_h20",
-        feature_matrix_baseline_h20=tmp_path / "data" / "feature_matrices" / "baseline_h20",
-        feature_matrix_expanded_h20=tmp_path / "data" / "feature_matrices" / "expanded_h20",
-        frozen_features_expanded_h20_v1=tmp_path / "data" / "frozen_features" / "expanded_h20_v1",
-        oos_predictions_baseline_h20=tmp_path / "data" / "oos_predictions" / "baseline_h20",
+        labeled_target_h5=tmp_path / "data" / "labeled" / "target_h5",
+        feature_matrix_baseline_h5=tmp_path / "data" / "feature_matrices" / "baseline_h5",
+        feature_matrix_expanded_h5=tmp_path / "data" / "feature_matrices" / "expanded_h5",
+        frozen_features_expanded_h5_v1=tmp_path / "data" / "frozen_features" / "expanded_h5_v1",
+        oos_predictions_baseline_h5=tmp_path / "data" / "oos_predictions" / "baseline_h5",
         validation_reports=tmp_path / "reports" / "validation",
         label_reports=tmp_path / "reports" / "labels",
         feature_reports=tmp_path / "reports" / "features",
@@ -45,12 +45,12 @@ def _paths(tmp_path) -> ProjectPaths:
 
 def _create_synthetic_data(paths: ProjectPaths) -> None:
     """Create synthetic expanded parquet and supporting files under temp paths."""
-    paths.feature_matrix_expanded_h20.mkdir(parents=True, exist_ok=True)
+    paths.feature_matrix_expanded_h5.mkdir(parents=True, exist_ok=True)
     paths.wfa_reports.mkdir(parents=True, exist_ok=True)
 
     # feature_cols.json with non-leakage names
     feature_cols = ["alpha_a", "alpha_b"]
-    (paths.feature_matrix_expanded_h20 / "feature_cols.json").write_text(
+    (paths.feature_matrix_expanded_h5 / "feature_cols.json").write_text(
         json.dumps(feature_cols), encoding="utf-8"
     )
 
@@ -64,7 +64,7 @@ def _create_synthetic_data(paths: ProjectPaths) -> None:
             "test_end_date": ["2020-01-07"],
         }
     )
-    split_plan.to_csv(paths.wfa_reports / "baseline_h20_split_plan.csv", index=False)
+    split_plan.to_csv(paths.wfa_reports / "baseline_h5_split_plan.csv", index=False)
 
     # synthetic expanded parquet
     dates = pd.date_range("2020-01-01", periods=7)
@@ -80,13 +80,13 @@ def _create_synthetic_data(paths: ProjectPaths) -> None:
                 {
                     "date": date,
                     "ticker": ticker,
-                    "target_class_20d": target,
+                    "target_class_5d": target,
                     "alpha_a": alpha_a,
                     "alpha_b": alpha_b,
                 }
             )
     df = pd.DataFrame(rows)
-    df.to_parquet(paths.feature_matrix_expanded_h20 / "expanded_h20.parquet", index=False)
+    df.to_parquet(paths.feature_matrix_expanded_h5 / "expanded_h5.parquet", index=False)
 
 
 class TestStage21FeatureDiscoveryHandoff:
@@ -107,18 +107,18 @@ class TestStage21FeatureDiscoveryHandoff:
         assert summary["blockers"] == []
 
         # Assert output files exist
-        assert (paths.feature_reports / "expanded_h20_feature_discovery.csv").exists()
-        assert (paths.feature_reports / "expanded_h20_feature_discovery_by_fold.csv").exists()
-        assert (paths.feature_reports / "expanded_h20_feature_correlations.csv").exists()
-        assert (paths.feature_reports / "expanded_h20_feature_discovery_summary.json").exists()
+        assert (paths.feature_reports / "expanded_h5_feature_discovery.csv").exists()
+        assert (paths.feature_reports / "expanded_h5_feature_discovery_by_fold.csv").exists()
+        assert (paths.feature_reports / "expanded_h5_feature_correlations.csv").exists()
+        assert (paths.feature_reports / "expanded_h5_feature_discovery_summary.json").exists()
 
     def test_run_feature_discovery_missing_parquet_raises(self, tmp_path, monkeypatch) -> None:
         paths = _paths(tmp_path)
-        paths.feature_matrix_expanded_h20.mkdir(parents=True, exist_ok=True)
+        paths.feature_matrix_expanded_h5.mkdir(parents=True, exist_ok=True)
         paths.wfa_reports.mkdir(parents=True, exist_ok=True)
 
         # Write feature_cols.json but NO parquet
-        (paths.feature_matrix_expanded_h20 / "feature_cols.json").write_text(
+        (paths.feature_matrix_expanded_h5 / "feature_cols.json").write_text(
             json.dumps(["alpha_a"]), encoding="utf-8"
         )
         split_plan = pd.DataFrame(
@@ -130,7 +130,7 @@ class TestStage21FeatureDiscoveryHandoff:
                 "test_end_date": ["2020-01-07"],
             }
         )
-        split_plan.to_csv(paths.wfa_reports / "baseline_h20_split_plan.csv", index=False)
+        split_plan.to_csv(paths.wfa_reports / "baseline_h5_split_plan.csv", index=False)
 
         monkeypatch.setattr(
             "quant_project_daily.feature_discovery.load_feature_selection_config",

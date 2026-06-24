@@ -19,17 +19,23 @@ class ProjectPaths:
     normalized: Path
     causal: Path
     research_ohlcv_daily: Path
-    labeled_target_h20: Path
-    feature_matrix_baseline_h20: Path
-    feature_matrix_expanded_h20: Path
-    frozen_features_expanded_h20_v1: Path
-    oos_predictions_baseline_h20: Path
+    labeled_target_h5: Path
+    feature_matrix_baseline_h5: Path
+    feature_matrix_expanded_h5: Path
+    frozen_features_expanded_h5_v1: Path
+    oos_predictions_baseline_h5: Path
     validation_reports: Path
     label_reports: Path
     feature_reports: Path
     wfa_reports: Path
     metrics_reports: Path
     gates_reports: Path
+    feature_matrix_baseline_h5_scoring: Path | None = None
+    signals_reports: Path | None = None
+    option_chain_raw_snapshots: Path | None = None
+    option_chain_normalized: Path | None = None
+    option_chain_candidate_linked: Path | None = None
+    option_chain_reports: Path | None = None
 
 
 def load_project_config(path: Path | None = None) -> dict[str, Any]:
@@ -45,6 +51,9 @@ def project_paths(config: dict[str, Any] | None = None) -> ProjectPaths:
     def rel(key: str) -> Path:
         return REPO_ROOT / paths[key]
 
+    def rel_optional(key: str, default: str) -> Path:
+        return REPO_ROOT / paths.get(key, default)
+
     return ProjectPaths(
         repo_root=REPO_ROOT,
         raw_txt=rel("raw_txt"),
@@ -53,17 +62,26 @@ def project_paths(config: dict[str, Any] | None = None) -> ProjectPaths:
         normalized=rel("normalized"),
         causal=rel("causal"),
         research_ohlcv_daily=rel("research_ohlcv_daily"),
-        labeled_target_h20=rel("labeled_target_h20"),
-        feature_matrix_baseline_h20=rel("feature_matrix_baseline_h20"),
-        feature_matrix_expanded_h20=rel("feature_matrix_expanded_h20"),
-        frozen_features_expanded_h20_v1=rel("frozen_features_expanded_h20_v1"),
-        oos_predictions_baseline_h20=rel("oos_predictions_baseline_h20"),
+        labeled_target_h5=rel("labeled_target_h5"),
+        feature_matrix_baseline_h5=rel("feature_matrix_baseline_h5"),
+        feature_matrix_baseline_h5_scoring=rel_optional(
+            "feature_matrix_baseline_h5_scoring",
+            "data/feature_matrices/baseline_h5_scoring",
+        ),
+        feature_matrix_expanded_h5=rel("feature_matrix_expanded_h5"),
+        frozen_features_expanded_h5_v1=rel("frozen_features_expanded_h5_v1"),
+        oos_predictions_baseline_h5=rel("oos_predictions_baseline_h5"),
         validation_reports=rel("validation_reports"),
         label_reports=rel("label_reports"),
         feature_reports=rel("feature_reports"),
         wfa_reports=rel("wfa_reports"),
         metrics_reports=rel("metrics_reports"),
         gates_reports=rel("gates_reports"),
+        signals_reports=rel_optional("signals_reports", "reports/signals"),
+        option_chain_raw_snapshots=rel_optional("option_chain_raw_snapshots", "data/options/raw_snapshots"),
+        option_chain_normalized=rel_optional("option_chain_normalized", "data/options/normalized"),
+        option_chain_candidate_linked=rel_optional("option_chain_candidate_linked", "data/options/candidate_linked"),
+        option_chain_reports=rel_optional("option_chain_reports", "reports/options"),
     )
 
 

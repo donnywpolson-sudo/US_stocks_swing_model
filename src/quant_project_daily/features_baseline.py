@@ -132,7 +132,7 @@ def build_baseline_features(labeled: pd.DataFrame, cfg: dict[str, object] | None
 
     df["year"] = df["date"].dt.year.astype("int64")
     df["date"] = df["date"].dt.date
-    out = df.loc[df["label_valid_20d"]].copy().reset_index(drop=True)
+    out = df.loc[df["label_valid_5d"]].copy().reset_index(drop=True)
 
     registry = build_column_registry(list(out.columns), cfg)
     feature_cols = registry["feature_cols"]
@@ -159,29 +159,29 @@ def run_baseline_features(paths: ProjectPaths | None = None) -> dict[str, object
     p = paths or project_paths()
     cfg = load_baseline_feature_config()
     data, summary, registry = _build_baseline_features_polars(p, cfg)
-    reset_parquet_output_dir(p.feature_matrix_baseline_h20)
+    reset_parquet_output_dir(p.feature_matrix_baseline_h5)
     if data.height:
-        data.write_parquet(str(p.feature_matrix_baseline_h20 / "baseline_h20.parquet"))
+        data.write_parquet(str(p.feature_matrix_baseline_h5 / "baseline_h5.parquet"))
 
     for name, values in registry.items():
-        (p.feature_matrix_baseline_h20 / f"{name}.json").write_text(json.dumps(values, indent=2), encoding="utf-8")
+        (p.feature_matrix_baseline_h5 / f"{name}.json").write_text(json.dumps(values, indent=2), encoding="utf-8")
 
     p.feature_reports.mkdir(parents=True, exist_ok=True)
-    (p.feature_reports / "baseline_h20_summary.json").write_text(
+    (p.feature_reports / "baseline_h5_summary.json").write_text(
         json.dumps(summary, indent=2, default=str),
         encoding="utf-8",
     )
     return summary
 
 
-def _build_baseline_features_polars(p: ProjectPaths, cfg: dict[str, object]) -> tuple[pl.DataFrame, dict[str, object], dict[str, list[str]]]:
-    feature_cols = list(cfg["feature_columns"])
-    target_cols = list(cfg["target_columns"])
-    metadata_cols = list(cfg["metadata_columns"])
-    excluded_cols = list(cfg["excluded_columns"])
+SCORING_PROXY_COLUMNS = ["median_dollar_volume_60", "zero_volume_count_60", "history_bars"]
 
-    df = pl.read_parquet(str(p.labeled_target_h20)).with_columns(pl.col("date").cast(pl.Date, strict=False))
-    input_rows = df.height
+
+def _baseline_h5_scoring_path(p: ProjectPaths):
+    return p.feature_matrix_baseline_h5_scoring or p.repo_root / "data" / "feature_matrices" / "baseline_h5_scoring"
+
+
+def _add_baseline_feature_columns_polars(df: pl.DataFrame) -> pl.DataFrame:
     df = df.sort(["ticker", "date"])
     c = pl.col
 
@@ -271,18 +271,28 @@ def _build_baseline_features_polars(p: ProjectPaths, cfg: dict[str, object]) -> 
     for col in ["ret_20d", "rsi_14", "drawdown_from_60d_high", "dist_to_60d_low", "volume_z_20d", "dollar_volume_z_20d"]:
         df = df.with_columns((c(col).rank("average").over("date") / c(col).count().over("date")).alias(f"rank_{col}"))
 
-    df = df.with_columns(c("date").dt.year().alias("year")).filter(c("label_valid_20d") == True)
-    keep_cols = [col for col in metadata_cols + excluded_cols + target_cols + feature_cols if col in df.columns]
-    df = df.select(keep_cols)
+    return df.with_columns(c("date").dt.year().alias("year"))
 
-    registry = build_column_registry(df.columns, cfg)
-    rows_by_year = {str(r["year"]): int(r["len"]) for r in df.group_by("year").len().sort("year").to_dicts()}
-    null_counts = df.select([pl.col(col).null_count().alias(col) for col in feature_cols]).to_dicts()[0]
+
+def _feature_summary(
+    df: pl.DataFrame,
+    *,
+    input_rows: int,
+    feature_cols: list[str],
+    registry: dict[str, list[str]],
+    extra: dict[str, object] | None = None,
+) -> dict[str, object]:
+    rows_by_year = {str(r["year"]): int(r["len"]) for r in df.group_by("year").len().sort("year").to_dicts()} if df.height else {}
+    null_counts = (
+        df.select([pl.col(col).null_count().alias(col) for col in feature_cols]).to_dicts()[0]
+        if df.height
+        else {col: 0 for col in feature_cols}
+    )
     summary = {
         "input_rows": int(input_rows),
         "output_rows": int(df.height),
         "feature_count": len(registry["feature_cols"]),
-        "target_column_count": len(registry["target_cols"]),
+        "target_column_count": len(registry.get("target_cols", [])),
         "metadata_column_count": len(registry["metadata_cols"]),
         "min_date": str(df.select(pl.col("date").min()).item()) if df.height else None,
         "max_date": str(df.select(pl.col("date").max()).item()) if df.height else None,
@@ -291,4 +301,88 @@ def _build_baseline_features_polars(p: ProjectPaths, cfg: dict[str, object]) -> 
         "null_counts": {k: int(v) for k, v in null_counts.items()},
         "feature_columns": registry["feature_cols"],
     }
+    if extra:
+        summary.update(extra)
+    return summary
+
+
+def _build_baseline_features_polars(p: ProjectPaths, cfg: dict[str, object]) -> tuple[pl.DataFrame, dict[str, object], dict[str, list[str]]]:
+    feature_cols = list(cfg["feature_columns"])
+    target_cols = list(cfg["target_columns"])
+    metadata_cols = list(cfg["metadata_columns"])
+    excluded_cols = list(cfg["excluded_columns"])
+
+    df = pl.read_parquet(str(p.labeled_target_h5)).with_columns(pl.col("date").cast(pl.Date, strict=False))
+    input_rows = df.height
+    df = _add_baseline_feature_columns_polars(df).filter(pl.col("label_valid_5d") == True)
+    keep_cols = [col for col in metadata_cols + excluded_cols + target_cols + feature_cols if col in df.columns]
+    df = df.select(keep_cols)
+
+    registry = build_column_registry(df.columns, cfg)
+    summary = _feature_summary(df, input_rows=input_rows, feature_cols=feature_cols, registry=registry)
     return df, summary, registry
+
+
+def _build_baseline_scoring_features_polars(
+    p: ProjectPaths,
+    cfg: dict[str, object],
+    score_date: str | None = None,
+) -> tuple[pl.DataFrame, dict[str, object], dict[str, list[str]]]:
+    feature_cols = list(cfg["feature_columns"])
+    metadata_cols = list(cfg["metadata_columns"])
+
+    df = pl.read_parquet(str(p.research_ohlcv_daily)).with_columns(pl.col("date").cast(pl.Date, strict=False))
+    input_rows = df.height
+    df = _add_baseline_feature_columns_polars(df).filter(pl.col("model_eligible") == True)
+    if df.is_empty():
+        raise ValueError("no model-eligible rows available for baseline_h5 scoring features")
+
+    selected_score_date = pl.select(pl.lit(score_date).cast(pl.Date)).item() if score_date is not None else df.select(pl.col("date").max()).item()
+    df = df.filter(pl.col("date") == selected_score_date)
+    if df.is_empty():
+        raise ValueError(f"no model-eligible rows available for score_date={selected_score_date}")
+
+    keep_cols = [col for col in metadata_cols + SCORING_PROXY_COLUMNS + feature_cols if col in df.columns]
+    missing = sorted(set(metadata_cols + SCORING_PROXY_COLUMNS + feature_cols) - set(keep_cols))
+    if missing:
+        raise ValueError(f"scoring feature columns missing: {missing}")
+    df = df.select(keep_cols)
+
+    registry = {
+        "metadata_cols": metadata_cols,
+        "proxy_cols": SCORING_PROXY_COLUMNS,
+        "feature_cols": feature_cols,
+    }
+    summary = _feature_summary(
+        df,
+        input_rows=input_rows,
+        feature_cols=feature_cols,
+        registry=registry,
+        extra={
+            "score_date": str(selected_score_date),
+            "source_path": str(p.research_ohlcv_daily),
+            "output_path": str(_baseline_h5_scoring_path(p)),
+            "candidate_export_type": "future_daily_underlying_signal_review",
+        },
+    )
+    return df, summary, registry
+
+
+def run_baseline_scoring_features(paths: ProjectPaths | None = None, score_date: str | None = None) -> dict[str, object]:
+    p = paths or project_paths()
+    cfg = load_baseline_feature_config()
+    data, summary, registry = _build_baseline_scoring_features_polars(p, cfg, score_date=score_date)
+    out_path = _baseline_h5_scoring_path(p)
+    reset_parquet_output_dir(out_path)
+    if data.height:
+        data.write_parquet(str(out_path / "baseline_h5_scoring.parquet"))
+
+    for name, values in registry.items():
+        (out_path / f"{name}.json").write_text(json.dumps(values, indent=2), encoding="utf-8")
+
+    p.feature_reports.mkdir(parents=True, exist_ok=True)
+    (p.feature_reports / "baseline_h5_scoring_summary.json").write_text(
+        json.dumps(summary, indent=2, default=str),
+        encoding="utf-8",
+    )
+    return summary

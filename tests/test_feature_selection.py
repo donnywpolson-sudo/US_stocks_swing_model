@@ -20,9 +20,9 @@ from quant_project_daily.feature_selection import (
 
 def _cfg() -> dict[str, object]:
     return {
-        "version": "expanded_h20_v1",
-        "target_column": "fwd_ret_20d",
-        "class_target_column": "target_class_20d",
+        "version": "expanded_h5_v1",
+        "target_column": "fwd_ret_5d",
+        "class_target_column": "target_class_5d",
         "max_selected_features": 2,
         "min_non_null_pct": 0.50,
         "min_finite_pct": 0.99,
@@ -45,11 +45,11 @@ def _paths(tmp_path) -> ProjectPaths:
         normalized=tmp_path / "data" / "normalized",
         causal=tmp_path / "data" / "causal",
         research_ohlcv_daily=tmp_path / "data" / "research_ohlcv_daily",
-        labeled_target_h20=tmp_path / "data" / "labeled" / "target_h20",
-        feature_matrix_baseline_h20=tmp_path / "data" / "feature_matrices" / "baseline_h20",
-        feature_matrix_expanded_h20=tmp_path / "data" / "feature_matrices" / "expanded_h20",
-        frozen_features_expanded_h20_v1=tmp_path / "data" / "frozen_features" / "expanded_h20_v1",
-        oos_predictions_baseline_h20=tmp_path / "data" / "oos_predictions" / "baseline_h20",
+        labeled_target_h5=tmp_path / "data" / "labeled" / "target_h5",
+        feature_matrix_baseline_h5=tmp_path / "data" / "feature_matrices" / "baseline_h5",
+        feature_matrix_expanded_h5=tmp_path / "data" / "feature_matrices" / "expanded_h5",
+        frozen_features_expanded_h5_v1=tmp_path / "data" / "frozen_features" / "expanded_h5_v1",
+        oos_predictions_baseline_h5=tmp_path / "data" / "oos_predictions" / "baseline_h5",
         validation_reports=tmp_path / "reports" / "validation",
         label_reports=tmp_path / "reports" / "labels",
         feature_reports=tmp_path / "reports" / "features",
@@ -215,11 +215,11 @@ class TestRunFeatureSelection:
                 }
             ]
         )
-        discovery.to_csv(paths.feature_reports / "expanded_h20_feature_discovery.csv", index=False)
+        discovery.to_csv(paths.feature_reports / "expanded_h5_feature_discovery.csv", index=False)
 
         # Write correlations CSV (empty is fine since no pruning needed)
         corr = pd.DataFrame(columns=["feature_a", "feature_b", "max_abs_corr"])
-        corr.to_csv(paths.feature_reports / "expanded_h20_feature_correlations.csv", index=False)
+        corr.to_csv(paths.feature_reports / "expanded_h5_feature_correlations.csv", index=False)
 
         monkeypatch.setattr(
             "quant_project_daily.feature_selection.load_feature_selection_config",
@@ -229,10 +229,10 @@ class TestRunFeatureSelection:
         summary = run_feature_selection(paths)
 
         # Assert output files exist
-        ranking_path = paths.feature_reports / "expanded_h20_feature_ranking.csv"
-        selected_path = paths.feature_reports / "expanded_h20_selected_features.csv"
-        rejected_path = paths.feature_reports / "expanded_h20_rejected_features.csv"
-        summary_path = paths.feature_reports / "expanded_h20_selection_summary.json"
+        ranking_path = paths.feature_reports / "expanded_h5_feature_ranking.csv"
+        selected_path = paths.feature_reports / "expanded_h5_selected_features.csv"
+        rejected_path = paths.feature_reports / "expanded_h5_rejected_features.csv"
+        summary_path = paths.feature_reports / "expanded_h5_selection_summary.json"
 
         assert ranking_path.exists(), f"missing {ranking_path}"
         assert selected_path.exists(), f"missing {selected_path}"
@@ -263,8 +263,8 @@ class TestFreezeFeatureSet:
         rejected_df = pd.DataFrame(
             [{"feature": "weak_feat", "selected": False, "reject_reason": "weak_rank_ic"}]
         )
-        selected_df.to_csv(paths.feature_reports / "expanded_h20_selected_features.csv", index=False)
-        rejected_df.to_csv(paths.feature_reports / "expanded_h20_rejected_features.csv", index=False)
+        selected_df.to_csv(paths.feature_reports / "expanded_h5_selected_features.csv", index=False)
+        rejected_df.to_csv(paths.feature_reports / "expanded_h5_rejected_features.csv", index=False)
 
         monkeypatch.setattr(
             "quant_project_daily.feature_selection.load_feature_selection_config",
@@ -273,7 +273,7 @@ class TestFreezeFeatureSet:
 
         manifest = freeze_feature_set(paths)
 
-        frozen_dir = paths.frozen_features_expanded_h20_v1
+        frozen_dir = paths.frozen_features_expanded_h5_v1
         assert (frozen_dir / "feature_cols.json").exists()
         assert (frozen_dir / "selected_features.csv").exists()
         assert (frozen_dir / "rejected_features.csv").exists()

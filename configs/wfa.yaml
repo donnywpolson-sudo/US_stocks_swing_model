@@ -1,6 +1,6 @@
-feature_set: baseline_h20
+feature_set: baseline_h5
 train_window_days: 1260
 test_window_days: 63
 step_days: 63
-purge_days: 20
+purge_days: 5
 embargo_days: 0

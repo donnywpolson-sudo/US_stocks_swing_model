@@ -91,29 +91,29 @@ def select_features(
 def run_feature_selection(paths: ProjectPaths | None = None) -> dict[str, object]:
     p = paths or project_paths()
     cfg = load_feature_selection_config()
-    discovery_path = p.feature_reports / "expanded_h20_feature_discovery.csv"
+    discovery_path = p.feature_reports / "expanded_h5_feature_discovery.csv"
     if not discovery_path.exists():
         raise FileNotFoundError(
             f"missing Stage21 discovery output: {discovery_path}. "
             "Run: python scripts/stage21_discover_features.py --max-folds 2"
         )
     discovery = pd.read_csv(discovery_path)
-    corr_path = p.feature_reports / "expanded_h20_feature_correlations.csv"
+    corr_path = p.feature_reports / "expanded_h5_feature_correlations.csv"
     corr = _pair_corr_to_matrix(pd.read_csv(corr_path)) if corr_path.exists() else None
     ranking, selected, rejected, summary = select_features(discovery, cfg, corr)
     p.feature_reports.mkdir(parents=True, exist_ok=True)
-    ranking.to_csv(p.feature_reports / "expanded_h20_feature_ranking.csv", index=False)
-    selected.to_csv(p.feature_reports / "expanded_h20_selected_features.csv", index=False)
-    rejected.to_csv(p.feature_reports / "expanded_h20_rejected_features.csv", index=False)
-    (p.feature_reports / "expanded_h20_selection_summary.json").write_text(json.dumps(summary, indent=2), encoding="utf-8")
+    ranking.to_csv(p.feature_reports / "expanded_h5_feature_ranking.csv", index=False)
+    selected.to_csv(p.feature_reports / "expanded_h5_selected_features.csv", index=False)
+    rejected.to_csv(p.feature_reports / "expanded_h5_rejected_features.csv", index=False)
+    (p.feature_reports / "expanded_h5_selection_summary.json").write_text(json.dumps(summary, indent=2), encoding="utf-8")
     return summary
 
 
 def freeze_feature_set(paths: ProjectPaths | None = None) -> dict[str, object]:
     p = paths or project_paths()
     cfg = load_feature_selection_config()
-    selected_path = p.feature_reports / "expanded_h20_selected_features.csv"
-    rejected_path = p.feature_reports / "expanded_h20_rejected_features.csv"
+    selected_path = p.feature_reports / "expanded_h5_selected_features.csv"
+    rejected_path = p.feature_reports / "expanded_h5_rejected_features.csv"
     missing = [str(x) for x in [selected_path, rejected_path] if not x.exists()]
     if missing:
         raise FileNotFoundError(
@@ -123,7 +123,7 @@ def freeze_feature_set(paths: ProjectPaths | None = None) -> dict[str, object]:
         )
     selected = pd.read_csv(selected_path)
     rejected = pd.read_csv(rejected_path)
-    out = p.frozen_features_expanded_h20_v1
+    out = p.frozen_features_expanded_h5_v1
     out.mkdir(parents=True, exist_ok=True)
     feature_cols = selected["feature"].tolist()
     (out / "feature_cols.json").write_text(json.dumps(feature_cols, indent=2), encoding="utf-8")
@@ -131,7 +131,7 @@ def freeze_feature_set(paths: ProjectPaths | None = None) -> dict[str, object]:
     rejected.to_csv(out / "rejected_features.csv", index=False)
     manifest = {
         "feature_set": cfg["version"],
-        "source_matrix": str(p.feature_matrix_expanded_h20 / "expanded_h20.parquet"),
+        "source_matrix": str(p.feature_matrix_expanded_h5 / "expanded_h5.parquet"),
         "selection_config": cfg,
         "selected_feature_count": int(len(selected)),
         "rejected_count": int(len(rejected)),

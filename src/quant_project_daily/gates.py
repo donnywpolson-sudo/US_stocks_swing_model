@@ -12,7 +12,7 @@ from quant_project_daily.config import REPO_ROOT, ProjectPaths, project_paths
 def load_gate_config(path: Path | None = None) -> dict[str, Any]:
     cfg_path = path or REPO_ROOT / "configs" / "gates.yaml"
     with cfg_path.open("r", encoding="utf-8") as f:
-        return yaml.safe_load(f)["baseline_h20"]
+        return yaml.safe_load(f)["baseline_h5"]
 
 
 def load_metrics(path: Path) -> tuple[dict[str, Any] | None, list[str]]:
@@ -61,7 +61,7 @@ def evaluate_baseline_gate(metrics: dict[str, Any] | None, thresholds: dict[str,
 
     status = "FAIL" if failures else ("PASS_WITH_WARNINGS" if warnings else "PASS")
     return {
-        "gate_name": "baseline_h20_research_gate",
+        "gate_name": "baseline_h5_research_gate",
         "status": status,
         "passed": status != "FAIL",
         "warnings": sorted(set(warnings)),
@@ -86,8 +86,8 @@ def evaluate_baseline_gate(metrics: dict[str, Any] | None, thresholds: dict[str,
 def run_baseline_gate(paths: ProjectPaths | None = None) -> dict[str, Any]:
     p = paths or project_paths()
     thresholds = load_gate_config()
-    metrics, failures = load_metrics(p.metrics_reports / "baseline_h20_metrics_summary.json")
+    metrics, failures = load_metrics(p.metrics_reports / "baseline_h5_metrics_summary.json")
     result = evaluate_baseline_gate(metrics, thresholds, failures)
     p.gates_reports.mkdir(parents=True, exist_ok=True)
-    (p.gates_reports / "baseline_h20_gate.json").write_text(json.dumps(result, indent=2, default=str), encoding="utf-8")
+    (p.gates_reports / "baseline_h5_gate.json").write_text(json.dumps(result, indent=2, default=str), encoding="utf-8")
     return result

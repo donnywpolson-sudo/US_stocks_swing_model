@@ -115,7 +115,7 @@ def build_expanded_features(matrix: pd.DataFrame, cfg: dict[str, Any] | None = N
             df[col] = df.groupby("date", sort=False)[base].rank(pct=True, method="average")
     df["year"] = df["date"].dt.year.astype("int64")
     df["date"] = df["date"].dt.date
-    out = df.loc[df["label_valid_20d"]].copy().reset_index(drop=True)
+    out = df.loc[df["label_valid_5d"]].copy().reset_index(drop=True)
     registry = build_column_registry(list(out.columns), cfg)
     keep = registry["metadata_cols"] + registry["excluded_cols"] + registry["target_cols"] + registry["feature_cols"]
     out = out[[x for x in keep if x in out.columns]]
@@ -147,9 +147,9 @@ def _summary(df: pd.DataFrame, input_rows: int, cfg: dict[str, Any], registry: d
 
 def _run_polars(paths: ProjectPaths, cfg: dict[str, Any]) -> tuple[pl.DataFrame, dict[str, object], dict[str, list[str]]]:
     c = pl.col
-    baseline_files = sorted(paths.feature_matrix_baseline_h20.glob("*.parquet"))
+    baseline_files = sorted(paths.feature_matrix_baseline_h5.glob("*.parquet"))
     if not baseline_files:
-        raise FileNotFoundError(f"missing baseline parquet files under {paths.feature_matrix_baseline_h20}")
+        raise FileNotFoundError(f"missing baseline parquet files under {paths.feature_matrix_baseline_h5}")
     df = pl.read_parquet([str(p) for p in baseline_files]).with_columns(pl.col("date").cast(pl.Date, strict=False)).sort(["ticker", "date"])
     input_rows = df.height
     for w in [2, 4, 15, 30, 120, 252]:
@@ -272,11 +272,11 @@ def run_expanded_features(paths: ProjectPaths | None = None) -> dict[str, object
     p = paths or project_paths()
     cfg = load_expanded_feature_config()
     data, summary, registry = _run_polars(p, cfg)
-    reset_parquet_output_dir(p.feature_matrix_expanded_h20)
+    reset_parquet_output_dir(p.feature_matrix_expanded_h5)
     if data.height:
-        data.write_parquet(str(p.feature_matrix_expanded_h20 / "expanded_h20.parquet"))
+        data.write_parquet(str(p.feature_matrix_expanded_h5 / "expanded_h5.parquet"))
     for name, values in registry.items():
-        (p.feature_matrix_expanded_h20 / f"{name}.json").write_text(json.dumps(values, indent=2), encoding="utf-8")
+        (p.feature_matrix_expanded_h5 / f"{name}.json").write_text(json.dumps(values, indent=2), encoding="utf-8")
     p.feature_reports.mkdir(parents=True, exist_ok=True)
-    (p.feature_reports / "expanded_h20_summary.json").write_text(json.dumps(summary, indent=2, default=str), encoding="utf-8")
+    (p.feature_reports / "expanded_h5_summary.json").write_text(json.dumps(summary, indent=2, default=str), encoding="utf-8")
     return summary

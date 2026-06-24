@@ -14,11 +14,11 @@ def _make_paths(tmp_path: Path) -> ProjectPaths:
         normalized=tmp_path,
         causal=tmp_path,
         research_ohlcv_daily=tmp_path,
-        labeled_target_h20=tmp_path,
-        feature_matrix_baseline_h20=tmp_path,
-        feature_matrix_expanded_h20=tmp_path,
-        frozen_features_expanded_h20_v1=tmp_path,
-        oos_predictions_baseline_h20=tmp_path,
+        labeled_target_h5=tmp_path,
+        feature_matrix_baseline_h5=tmp_path,
+        feature_matrix_expanded_h5=tmp_path,
+        frozen_features_expanded_h5_v1=tmp_path,
+        oos_predictions_baseline_h5=tmp_path,
         validation_reports=tmp_path,
         label_reports=tmp_path,
         feature_reports=tmp_path,
@@ -114,13 +114,13 @@ class TestRunBaselineGate:
     def test_passing_case(self, tmp_path: Path) -> None:
         paths = _make_paths(tmp_path)
         paths.metrics_reports.mkdir(parents=True, exist_ok=True)
-        (paths.metrics_reports / "baseline_h20_metrics_summary.json").write_text(
+        (paths.metrics_reports / "baseline_h5_metrics_summary.json").write_text(
             json.dumps(self._passing_metrics), encoding="utf-8"
         )
 
         result = run_baseline_gate(paths=paths)
 
-        assert (paths.gates_reports / "baseline_h20_gate.json").exists()
+        assert (paths.gates_reports / "baseline_h5_gate.json").exists()
         assert result["status"] != "FAIL"
 
     def test_missing_metrics_file(self, tmp_path: Path) -> None:

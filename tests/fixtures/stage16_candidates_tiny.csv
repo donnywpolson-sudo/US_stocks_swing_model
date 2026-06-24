@@ -1,0 +1,3 @@
+score_date,ticker,raw_ticker,signal_side,signal_decile,pred_score_5d,pred_rank_pct_by_date,passes_option_underlying_proxy_25m,passes_option_underlying_proxy_50m
+2026-05-29,AAA,AAA.US,bullish_candidate,10,1.2,0.99,true,true
+2026-05-29,BBB,BBB.US,bearish_candidate,1,-1.2,0.01,true,false

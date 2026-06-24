@@ -18,8 +18,8 @@ def _matrix() -> pd.DataFrame:
                     "raw_ticker": f"{ticker}.US",
                     "f1": float(i) if not (ticker == "C" and d == dates[1]) else None,
                     "f2": float(d.day),
-                    "target_class_20d": [-1, 0, 1][i],
-                    "fwd_ret_20d": [-0.1, 0.0, 0.1][i],
+                    "target_class_5d": [-1, 0, 1][i],
+                    "fwd_ret_5d": [-0.1, 0.0, 0.1][i],
                     "next_open": 999.0,
                 }
             )
@@ -37,7 +37,7 @@ def _fold() -> dict[str, object]:
 
 
 def test_run_fold_respects_split_dates_and_output_rows() -> None:
-    result = run_fold(_matrix(), _fold(), ["f1", "f2"], {"target_column": "target_class_20d", "ridge_alpha": 1.0})
+    result = run_fold(_matrix(), _fold(), ["f1", "f2"], {"target_column": "target_class_5d", "ridge_alpha": 1.0})
     assert len(result.predictions) == 12
     assert result.predictions["date"].min().isoformat() == "2020-01-07"
     assert result.predictions["date"].max().isoformat() == "2020-01-10"
@@ -47,10 +47,10 @@ def test_run_fold_respects_split_dates_and_output_rows() -> None:
 
 
 def test_prediction_ranks_are_by_test_date() -> None:
-    result = run_fold(_matrix(), _fold(), ["f1", "f2"], {"target_column": "target_class_20d", "ridge_alpha": 1.0})
+    result = run_fold(_matrix(), _fold(), ["f1", "f2"], {"target_column": "target_class_5d", "ridge_alpha": 1.0})
     for _, g in result.predictions.groupby("date"):
-        assert sorted(g["pred_long_rank_20d"].tolist()) == [1, 2, 3]
-        assert sorted(g["pred_short_rank_20d"].tolist()) == [1, 2, 3]
+        assert sorted(g["pred_long_rank_5d"].tolist()) == [1, 2, 3]
+        assert sorted(g["pred_short_rank_5d"].tolist()) == [1, 2, 3]
         assert g["pred_rank_pct_by_date"].between(1 / 3, 1.0).all()
 
 
@@ -62,19 +62,19 @@ def test_train_only_imputer_scaler_do_not_fit_on_test_rows() -> None:
     changed = base.copy()
     changed.loc[(changed["date"] >= test_start) & (changed["ticker"] != "A"), "f1"] = 1_000_000.0
 
-    pred_base = run_fold(base, _fold(), ["f1", "f2"], {"target_column": "target_class_20d", "ridge_alpha": 1.0}).predictions
-    pred_changed = run_fold(changed, _fold(), ["f1", "f2"], {"target_column": "target_class_20d", "ridge_alpha": 1.0}).predictions
+    pred_base = run_fold(base, _fold(), ["f1", "f2"], {"target_column": "target_class_5d", "ridge_alpha": 1.0}).predictions
+    pred_changed = run_fold(changed, _fold(), ["f1", "f2"], {"target_column": "target_class_5d", "ridge_alpha": 1.0}).predictions
 
-    a_base = pred_base.loc[(pred_base["date"] == test_start.date()) & (pred_base["ticker"] == "A"), "pred_score_20d"].item()
+    a_base = pred_base.loc[(pred_base["date"] == test_start.date()) & (pred_base["ticker"] == "A"), "pred_score_5d"].item()
     a_changed = pred_changed.loc[
-        (pred_changed["date"] == test_start.date()) & (pred_changed["ticker"] == "A"), "pred_score_20d"
+        (pred_changed["date"] == test_start.date()) & (pred_changed["ticker"] == "A"), "pred_score_5d"
     ].item()
     assert a_base == a_changed
 
 
 def test_leakage_columns_rejected_from_features() -> None:
     with pytest.raises(ValueError):
-        validate_feature_cols(["f1", "next_open"], ["target_class_20d"], ["next_open"], ["date", "ticker"])
+        validate_feature_cols(["f1", "next_open"], ["target_class_5d"], ["next_open"], ["date", "ticker"])
 
 
 def test_max_folds_limits_requested_folds() -> None:
@@ -92,18 +92,18 @@ def test_run_fold_failure_raises_runtime_error(tmp_path: Path) -> None:
     from quant_project_daily.config import ProjectPaths
 
     # Create minimal directories and files
-    feature_dir = tmp_path / "feature_matrix_baseline_h20"
+    feature_dir = tmp_path / "feature_matrix_baseline_h5"
     feature_dir.mkdir(parents=True)
-    oos_dir = tmp_path / "oos_predictions_baseline_h20"
+    oos_dir = tmp_path / "oos_predictions_baseline_h5"
     oos_dir.mkdir(parents=True)
     wfa_dir = tmp_path / "wfa_reports"
     wfa_dir.mkdir(parents=True)
 
     # Write required JSON lists
     (feature_dir / "feature_cols.json").write_text(json.dumps(["f1"]))
-    (feature_dir / "target_cols.json").write_text(json.dumps(["target_class_20d"]))
+    (feature_dir / "target_cols.json").write_text(json.dumps(["target_class_5d"]))
     (feature_dir / "metadata_cols.json").write_text(json.dumps(["date", "ticker"]))
-    (feature_dir / "excluded_cols.json").write_text(json.dumps(["fwd_ret_20d"]))
+    (feature_dir / "excluded_cols.json").write_text(json.dumps(["fwd_ret_5d"]))
 
     # Write a split plan with one fold that will fail (empty data)
     plan = pd.DataFrame({
@@ -115,7 +115,7 @@ def test_run_fold_failure_raises_runtime_error(tmp_path: Path) -> None:
         "train_row_count": [100],
         "test_row_count": [100],
     })
-    plan.to_csv(wfa_dir / "baseline_h20_split_plan.csv", index=False)
+    plan.to_csv(wfa_dir / "baseline_h5_split_plan.csv", index=False)
 
     # Write an empty feature parquet so _read_matrix_for_fold returns empty df
     empty_df = pd.DataFrame({
@@ -123,8 +123,8 @@ def test_run_fold_failure_raises_runtime_error(tmp_path: Path) -> None:
         "ticker": pd.Series(dtype="object"),
         "raw_ticker": pd.Series(dtype="object"),
         "f1": pd.Series(dtype="float64"),
-        "target_class_20d": pd.Series(dtype="float64"),
-        "fwd_ret_20d": pd.Series(dtype="float64"),
+        "target_class_5d": pd.Series(dtype="float64"),
+        "fwd_ret_5d": pd.Series(dtype="float64"),
     })
     empty_df.to_parquet(feature_dir / "features.parquet", index=False)
 
@@ -136,11 +136,11 @@ def test_run_fold_failure_raises_runtime_error(tmp_path: Path) -> None:
         normalized=tmp_path / "data" / "normalized",
         causal=tmp_path / "data" / "causal",
         research_ohlcv_daily=tmp_path / "research_ohlcv_daily",
-        labeled_target_h20=tmp_path / "targets",
-        feature_matrix_baseline_h20=feature_dir,
-        feature_matrix_expanded_h20=tmp_path / "feature_matrix_expanded_h20",
-        frozen_features_expanded_h20_v1=tmp_path / "frozen",
-        oos_predictions_baseline_h20=oos_dir,
+        labeled_target_h5=tmp_path / "targets",
+        feature_matrix_baseline_h5=feature_dir,
+        feature_matrix_expanded_h5=tmp_path / "feature_matrix_expanded_h5",
+        frozen_features_expanded_h5_v1=tmp_path / "frozen",
+        oos_predictions_baseline_h5=oos_dir,
         validation_reports=tmp_path / "reports" / "validation",
         label_reports=tmp_path / "reports" / "labels",
         feature_reports=tmp_path / "reports" / "features",
@@ -150,6 +150,6 @@ def test_run_fold_failure_raises_runtime_error(tmp_path: Path) -> None:
     )
 
     with patch("quant_project_daily.baseline_wfa.load_model_config", return_value={
-        "model_type": "ridge", "ridge_alpha": 1.0, "target_column": "target_class_20d",
+        "model_type": "ridge", "ridge_alpha": 1.0, "target_column": "target_class_5d",
     }), patch("quant_project_daily.baseline_wfa.reset_parquet_output_dir"), pytest.raises(RuntimeError, match="fold.*failed"):
         run_baseline_wfa(paths=paths)

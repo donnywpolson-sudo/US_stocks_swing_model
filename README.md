@@ -8,10 +8,11 @@ Raw validation: scripts/stage03_validate_raw_data.py
 Daily normalization: scripts/stage05_normalize_daily.py
 Causal gating: scripts/stage07_causal_gating.py
 Research universe: scripts/stage08_build_research_universe.py
-20-day target generation: scripts/stage09_generate_targets.py
+h5 / 5-trading-day target generation: scripts/stage09_generate_targets.py
 Baseline feature matrix: scripts/stage11_build_baseline_features.py
 Column registry: scripts/stage13_build_column_registry.py
 WFA split plan: scripts/stage14_build_wfa_plan.py
+Daily underlying signal review export: scripts/stage16_build_daily_underlying_signals.py
 Baseline WFA: scripts/stage15_run_baseline_wfa.py
 Metrics: scripts/stage18_build_metrics.py
 Baseline gate: scripts/stage19_baseline_gate.py
@@ -34,6 +35,7 @@ python scripts/stage09_generate_targets.py
 python scripts/stage11_build_baseline_features.py
 python scripts/stage13_build_column_registry.py
 python scripts/stage14_build_wfa_plan.py
+python scripts/stage16_build_daily_underlying_signals.py
 python scripts/stage15_run_baseline_wfa.py
 python scripts/stage18_build_metrics.py
 python scripts/stage19_baseline_gate.py

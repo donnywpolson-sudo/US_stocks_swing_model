@@ -286,11 +286,11 @@ def discover_features_for_folds(
 
 
 def _load_matrix_for_plan(paths: ProjectPaths, folds: pd.DataFrame, columns: list[str]) -> pd.DataFrame:
-    path = paths.feature_matrix_expanded_h20 / "expanded_h20.parquet"
+    path = paths.feature_matrix_expanded_h5 / "expanded_h5.parquet"
     if not path.exists():
-        files = sorted(paths.feature_matrix_expanded_h20.glob("*.parquet"))
+        files = sorted(paths.feature_matrix_expanded_h5.glob("*.parquet"))
         if not files:
-            raise FileNotFoundError(f"missing expanded parquet under {paths.feature_matrix_expanded_h20}")
+            raise FileNotFoundError(f"missing expanded parquet under {paths.feature_matrix_expanded_h5}")
         path = files[0]
     start = pd.to_datetime(folds["train_start_date"]).min().date()
     end = pd.to_datetime(folds["train_end_date"]).max().date()
@@ -302,26 +302,26 @@ def _load_matrix_for_plan(paths: ProjectPaths, folds: pd.DataFrame, columns: lis
 def run_feature_discovery(max_folds: int | None = None, fold_id: int | None = None, paths: ProjectPaths | None = None) -> dict[str, object]:
     p = paths or project_paths()
     cfg = load_feature_selection_config()
-    feature_cols = _load_json_list(p.feature_matrix_expanded_h20 / "feature_cols.json")
-    plan = pd.read_csv(p.wfa_reports / "baseline_h20_split_plan.csv").sort_values("fold_id")
+    feature_cols = _load_json_list(p.feature_matrix_expanded_h5 / "feature_cols.json")
+    plan = pd.read_csv(p.wfa_reports / "baseline_h5_split_plan.csv").sort_values("fold_id")
     if fold_id is not None:
         plan = plan[plan["fold_id"] == fold_id]
     if max_folds is not None:
         plan = plan.head(max_folds)
     if plan.empty:
         raise ValueError(f"no WFA folds selected for fold_id={fold_id} max_folds={max_folds}")
-    parquet_path = p.feature_matrix_expanded_h20 / "expanded_h20.parquet"
+    parquet_path = p.feature_matrix_expanded_h5 / "expanded_h5.parquet"
     if not parquet_path.exists():
-        files = sorted(p.feature_matrix_expanded_h20.glob("*.parquet"))
+        files = sorted(p.feature_matrix_expanded_h5.glob("*.parquet"))
         if not files:
-            raise FileNotFoundError(f"missing expanded parquet under {p.feature_matrix_expanded_h20}")
+            raise FileNotFoundError(f"missing expanded parquet under {p.feature_matrix_expanded_h5}")
         parquet_path = files[0]
     by_fold, discovery, corr_by_pair, load_stats = _discover_features_for_folds_lazy(parquet_path, plan, feature_cols, cfg)
     p.feature_reports.mkdir(parents=True, exist_ok=True)
-    discovery_path = p.feature_reports / "expanded_h20_feature_discovery.csv"
+    discovery_path = p.feature_reports / "expanded_h5_feature_discovery.csv"
     discovery.to_csv(discovery_path, index=False)
-    by_fold.to_csv(p.feature_reports / "expanded_h20_feature_discovery_by_fold.csv", index=False)
-    corr_by_pair.to_csv(p.feature_reports / "expanded_h20_feature_correlations.csv", index=False)
+    by_fold.to_csv(p.feature_reports / "expanded_h5_feature_discovery_by_fold.csv", index=False)
+    corr_by_pair.to_csv(p.feature_reports / "expanded_h5_feature_correlations.csv", index=False)
     summary = {
         "folds_used": int(plan["fold_id"].nunique()),
         "features_scored": int(len(discovery)),
@@ -335,7 +335,7 @@ def run_feature_discovery(max_folds: int | None = None, fold_id: int | None = No
     }
     if int(cfg.get("correlation_sample_rows_per_fold", 0) or 0) > 0 or int(cfg.get("correlation_sample_date_stride", 0) or 0) > 1:
         summary["warnings"].append("feature correlation pruning diagnostics use deterministic train-date/train-row samples per fold")
-    (p.feature_reports / "expanded_h20_feature_discovery_summary.json").write_text(json.dumps(summary, indent=2), encoding="utf-8")
+    (p.feature_reports / "expanded_h5_feature_discovery_summary.json").write_text(json.dumps(summary, indent=2), encoding="utf-8")
     return summary
 
 

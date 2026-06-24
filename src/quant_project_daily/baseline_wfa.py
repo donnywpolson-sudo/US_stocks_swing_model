@@ -21,23 +21,23 @@ PREDICTION_COLUMNS = [
     "date",
     "ticker",
     "raw_ticker",
-    "target_class_20d",
-    "fwd_ret_20d",
-    "pred_score_20d",
+    "target_class_5d",
+    "fwd_ret_5d",
+    "pred_score_5d",
     "pred_rank_pct_by_date",
-    "pred_long_rank_20d",
-    "pred_short_rank_20d",
+    "pred_long_rank_5d",
+    "pred_short_rank_5d",
 ]
 
 FORBIDDEN_FEATURE_COLUMNS = {
-    "target_class_20d",
-    "fwd_ret_20d",
-    "target_long_top20_20d",
-    "target_short_bottom20_20d",
-    "label_valid_20d",
+    "target_class_5d",
+    "fwd_ret_5d",
+    "target_long_top20_5d",
+    "target_short_bottom20_5d",
+    "label_valid_5d",
     "next_open",
-    "exit_close_20d",
-    "exit_date_20d",
+    "exit_close_5d",
+    "exit_date_5d",
 }
 
 
@@ -101,16 +101,16 @@ def run_fold(
     model = Ridge(alpha=float(model_cfg.get("ridge_alpha", 1.0)))
     model.fit(x_train, y_train)
 
-    pred = test[["date", "ticker", "raw_ticker", "target_class_20d", "fwd_ret_20d"]].copy()
+    pred = test[["date", "ticker", "raw_ticker", "target_class_5d", "fwd_ret_5d"]].copy()
     pred.insert(0, "fold_id", int(f["fold_id"]))
-    pred["pred_score_20d"] = model.predict(x_test)
-    pred["pred_rank_pct_by_date"] = pred.groupby("date")["pred_score_20d"].rank(pct=True, method="average")
-    pred["pred_long_rank_20d"] = pred.groupby("date")["pred_score_20d"].rank(ascending=False, method="first").astype("int64")
-    pred["pred_short_rank_20d"] = pred.groupby("date")["pred_score_20d"].rank(ascending=True, method="first").astype("int64")
+    pred["pred_score_5d"] = model.predict(x_test)
+    pred["pred_rank_pct_by_date"] = pred.groupby("date")["pred_score_5d"].rank(pct=True, method="average")
+    pred["pred_long_rank_5d"] = pred.groupby("date")["pred_score_5d"].rank(ascending=False, method="first").astype("int64")
+    pred["pred_short_rank_5d"] = pred.groupby("date")["pred_score_5d"].rank(ascending=True, method="first").astype("int64")
     pred["date"] = pred["date"].dt.date
     pred = pred[PREDICTION_COLUMNS]
 
-    s = pred["pred_score_20d"]
+    s = pred["pred_score_5d"]
     summary = {
         "fold_id": int(f["fold_id"]),
         "train_row_count": int(len(train)),
@@ -174,18 +174,18 @@ def run_baseline_wfa(max_folds: int | None = None, fold_id: int | None = None, p
     total_started = time.perf_counter()
     p = paths or project_paths()
     model_cfg = load_model_config()
-    feature_cols = _load_json_list(p.feature_matrix_baseline_h20 / "feature_cols.json")
-    target_cols = _load_json_list(p.feature_matrix_baseline_h20 / "target_cols.json")
-    metadata_cols = _load_json_list(p.feature_matrix_baseline_h20 / "metadata_cols.json")
-    excluded_cols = _load_json_list(p.feature_matrix_baseline_h20 / "excluded_cols.json")
+    feature_cols = _load_json_list(p.feature_matrix_baseline_h5 / "feature_cols.json")
+    target_cols = _load_json_list(p.feature_matrix_baseline_h5 / "target_cols.json")
+    metadata_cols = _load_json_list(p.feature_matrix_baseline_h5 / "metadata_cols.json")
+    excluded_cols = _load_json_list(p.feature_matrix_baseline_h5 / "excluded_cols.json")
     validate_feature_cols(feature_cols, target_cols, excluded_cols, metadata_cols)
 
-    plan = pd.read_csv(p.wfa_reports / "baseline_h20_split_plan.csv")
+    plan = pd.read_csv(p.wfa_reports / "baseline_h5_split_plan.csv")
     requested = select_folds(plan, max_folds=max_folds, fold_id=fold_id)
-    reset_parquet_output_dir(p.oos_predictions_baseline_h20)
+    reset_parquet_output_dir(p.oos_predictions_baseline_h5)
     p.wfa_reports.mkdir(parents=True, exist_ok=True)
 
-    need_cols = sorted(set(feature_cols + ["date", "ticker", "raw_ticker", "target_class_20d", "fwd_ret_20d"]))
+    need_cols = sorted(set(feature_cols + ["date", "ticker", "raw_ticker", "target_class_5d", "fwd_ret_5d"]))
     fold_summaries = []
     failed = []
     all_preds = []
@@ -193,9 +193,9 @@ def run_baseline_wfa(max_folds: int | None = None, fold_id: int | None = None, p
         _log_fold_start(fold)
         fold_started = time.perf_counter()
         try:
-            matrix = _read_matrix_for_fold(p.feature_matrix_baseline_h20, fold, need_cols)
+            matrix = _read_matrix_for_fold(p.feature_matrix_baseline_h5, fold, need_cols)
             result = run_fold(matrix, fold, feature_cols, model_cfg)
-            result.predictions.to_parquet(p.oos_predictions_baseline_h20 / f"fold_{int(fold['fold_id']):03d}.parquet", index=False)
+            result.predictions.to_parquet(p.oos_predictions_baseline_h5 / f"fold_{int(fold['fold_id']):03d}.parquet", index=False)
             all_preds.append(result.predictions)
             fold_summaries.append(result.summary)
             _log_fold_done(result.summary, time.perf_counter() - fold_started)
@@ -210,7 +210,7 @@ def run_baseline_wfa(max_folds: int | None = None, fold_id: int | None = None, p
             )
 
     fold_df = pd.DataFrame(fold_summaries)
-    fold_df.to_csv(p.wfa_reports / "baseline_h20_fold_summary.csv", index=False)
+    fold_df.to_csv(p.wfa_reports / "baseline_h5_fold_summary.csv", index=False)
     preds = pd.concat(all_preds, ignore_index=True) if all_preds else pd.DataFrame(columns=PREDICTION_COLUMNS)
     summary = {
         "folds_requested": int(len(requested)),
@@ -225,7 +225,7 @@ def run_baseline_wfa(max_folds: int | None = None, fold_id: int | None = None, p
         "blockers": failed,
         "warnings": [],
     }
-    (p.wfa_reports / "baseline_h20_oos_summary.json").write_text(json.dumps(summary, indent=2, default=str), encoding="utf-8")
+    (p.wfa_reports / "baseline_h5_oos_summary.json").write_text(json.dumps(summary, indent=2, default=str), encoding="utf-8")
     print(f"[stage15] all_folds_done total_elapsed_seconds={time.perf_counter() - total_started:.1f}", flush=True)
     if failed:
         failed_ids = [f["fold_id"] for f in failed]

@@ -67,7 +67,7 @@ def _matrix_columns(matrix_path: Path) -> list[str]:
 def write_column_registry(matrix_path: Path | None = None, cfg: dict[str, Any] | None = None) -> dict[str, object]:
     paths = project_paths()
     cfg = cfg or load_baseline_feature_config()
-    matrix_path = matrix_path or paths.feature_matrix_baseline_h20
+    matrix_path = matrix_path or paths.feature_matrix_baseline_h5
     if not matrix_path.exists():
         raise FileNotFoundError(f"missing feature matrix: {matrix_path}")
     columns = _matrix_columns(matrix_path)

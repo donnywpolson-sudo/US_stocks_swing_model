@@ -135,10 +135,10 @@ def _summary(
 def run_wfa_plan(paths: ProjectPaths | None = None) -> dict[str, object]:
     p = paths or project_paths()
     cfg = load_wfa_config()
-    result = build_wfa_plan(read_feature_date_counts(p.feature_matrix_baseline_h20), cfg)
+    result = build_wfa_plan(read_feature_date_counts(p.feature_matrix_baseline_h5), cfg)
     p.wfa_reports.mkdir(parents=True, exist_ok=True)
-    result.plan.to_csv(p.wfa_reports / "baseline_h20_split_plan.csv", index=False)
-    (p.wfa_reports / "baseline_h20_split_summary.json").write_text(
+    result.plan.to_csv(p.wfa_reports / "baseline_h5_split_plan.csv", index=False)
+    (p.wfa_reports / "baseline_h5_split_summary.json").write_text(
         json.dumps(result.summary, indent=2, default=str),
         encoding="utf-8",
     )

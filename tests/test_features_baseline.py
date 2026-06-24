@@ -10,8 +10,10 @@ from quant_project_daily.column_registry import build_column_registry, load_base
 from quant_project_daily.config import ProjectPaths
 from quant_project_daily.features_baseline import (
     _build_baseline_features_polars,
+    _build_baseline_scoring_features_polars,
     build_baseline_features,
     run_baseline_features,
+    run_baseline_scoring_features,
 )
 
 
@@ -36,14 +38,14 @@ def _labeled(tickers=("A", "B"), rows=300) -> pd.DataFrame:
                     "dollar_volume": close * (1000 + j * 100 + pd.Series(range(rows))),
                     "model_eligible": True,
                     "next_open": open_.shift(-1),
-                    "exit_close_20d": close.shift(-20),
-                    "exit_date_20d": dates.to_series().shift(-20).to_numpy(),
-                    "fwd_ret_20d": close.shift(-20) / open_.shift(-1) - 1,
-                    "has_split_like_gap_in_target_window_20d": False,
-                    "label_valid_20d": True,
-                    "target_class_20d": 0,
-                    "target_long_top20_20d": False,
-                    "target_short_bottom20_20d": False,
+                    "exit_close_5d": close.shift(-5),
+                    "exit_date_5d": dates.to_series().shift(-5).to_numpy(),
+                    "fwd_ret_5d": close.shift(-5) / open_.shift(-1) - 1,
+                    "has_split_like_gap_in_target_window_5d": False,
+                    "label_valid_5d": True,
+                    "target_class_5d": 0,
+                    "target_long_top20_5d": False,
+                    "target_short_bottom20_5d": False,
                 }
             )
         )
@@ -86,10 +88,10 @@ def test_rsi_and_volume_features_do_not_use_future_rows() -> None:
 
 def test_output_only_label_valid_and_no_leakage_in_feature_cols() -> None:
     df = _labeled(tickers=("A",), rows=80)
-    df.loc[df.index[:5], "label_valid_20d"] = False
+    df.loc[df.index[:5], "label_valid_5d"] = False
     result = build_baseline_features(df)
     assert len(result.data) == len(df) - 5
-    forbidden = {"next_open", "exit_close_20d", "fwd_ret_20d", "target_class_20d", "label_valid_20d"}
+    forbidden = {"next_open", "exit_close_5d", "fwd_ret_5d", "target_class_5d", "label_valid_5d"}
     assert not (set(result.registry["feature_cols"]) & forbidden)
     assert set(result.registry["feature_cols"]) == set(load_baseline_feature_config()["feature_columns"])
 
@@ -98,11 +100,11 @@ def test_missing_configured_features_raises_value_error() -> None:
     """build_column_registry must fail when configured columns are missing from actual."""
     cfg = {
         "feature_columns": ["f1", "f2", "missing_feat"],
-        "target_columns": ["target_class_20d", "missing_target"],
+        "target_columns": ["target_class_5d", "missing_target"],
         "metadata_columns": ["date", "ticker", "missing_meta"],
-        "excluded_columns": ["fwd_ret_20d"],
+        "excluded_columns": ["fwd_ret_5d"],
     }
-    actual_columns = ["f1", "f2", "date", "ticker", "target_class_20d", "fwd_ret_20d"]
+    actual_columns = ["f1", "f2", "date", "ticker", "target_class_5d", "fwd_ret_5d"]
     with pytest.raises(ValueError, match="configured columns missing"):
         build_column_registry(actual_columns, cfg)
 
@@ -140,24 +142,56 @@ def _make_polars_labeled(tmp_path: Path) -> Path:
                     ],
                     "model_eligible": [True] * rows,
                     "next_open": open_[1:] + [None],
-                    "exit_close_20d": [None] * 20 + close[:-20],
-                    "exit_date_20d": ["2010-01-01"] * rows,
-                    "fwd_ret_20d": [
-                        (close[i + 20] / open_[i] - 1) if i + 20 < rows else None
+                    "exit_close_5d": close[5:] + [None] * 5,
+                    "exit_date_5d": ["2010-01-01"] * rows,
+                    "fwd_ret_5d": [
+                        (close[i + 5] / open_[i] - 1) if i + 5 < rows else None
                         for i in range(rows)
                     ],
-                    "has_split_like_gap_in_target_window_20d": [False] * rows,
-                    "label_valid_20d": [True] * rows,
-                    "target_class_20d": [0] * rows,
-                    "target_long_top20_20d": [False] * rows,
-                    "target_short_bottom20_20d": [False] * rows,
+                    "has_split_like_gap_in_target_window_5d": [False] * rows,
+                    "label_valid_5d": [True] * rows,
+                    "target_class_5d": [0] * rows,
+                    "target_long_top20_5d": [False] * rows,
+                    "target_short_bottom20_5d": [False] * rows,
                 }
             )
         )
     df = pl.concat(frames)
-    pq = tmp_path / "labeled_target_h20.parquet"
+    pq = tmp_path / "labeled_target_h5.parquet"
     df.write_parquet(str(pq))
     return pq
+
+
+def _make_polars_research(path: Path) -> None:
+    rows = 300
+    start = pl.date(2010, 1, 1)
+    dates = pl.date_range(start, start + pl.duration(days=rows - 1), eager=True)
+    frames = []
+    for j, ticker in enumerate(("A", "B")):
+        base = 10 + j * 1000
+        close = [float(base + i) for i in range(rows)]
+        volume = [1000 + j * 100 + i for i in range(rows)]
+        frames.append(
+            pl.DataFrame(
+                {
+                    "date": dates,
+                    "ticker": [ticker] * rows,
+                    "raw_ticker": [f"{ticker}.US"] * rows,
+                    "open": [c - 0.5 for c in close],
+                    "high": [c + 1 for c in close],
+                    "low": [c - 1 for c in close],
+                    "close": close,
+                    "volume": volume,
+                    "dollar_volume": [c * v for c, v in zip(close, volume)],
+                    "model_eligible": [True] * rows,
+                    "median_dollar_volume_60": [1_000_000.0 + i for i in range(rows)],
+                    "zero_volume_count_60": [0.0] * rows,
+                    "history_bars": list(range(rows)),
+                    "year": [2010] * rows,
+                }
+            )
+        )
+    pl.concat(frames).write_parquet(str(path))
 
 
 def _make_test_paths(tmp_path: Path, labeled_parquet: Path) -> ProjectPaths:
@@ -169,11 +203,11 @@ def _make_test_paths(tmp_path: Path, labeled_parquet: Path) -> ProjectPaths:
         normalized=tmp_path / "normalized",
         causal=tmp_path / "causal",
         research_ohlcv_daily=tmp_path / "research_ohlcv_daily",
-        labeled_target_h20=labeled_parquet,
-        feature_matrix_baseline_h20=tmp_path / "feature_matrix_baseline_h20",
-        feature_matrix_expanded_h20=tmp_path / "feature_matrix_expanded_h20",
-        frozen_features_expanded_h20_v1=tmp_path / "frozen",
-        oos_predictions_baseline_h20=tmp_path / "oos",
+        labeled_target_h5=labeled_parquet,
+        feature_matrix_baseline_h5=tmp_path / "feature_matrix_baseline_h5",
+        feature_matrix_expanded_h5=tmp_path / "feature_matrix_expanded_h5",
+        frozen_features_expanded_h5_v1=tmp_path / "frozen",
+        oos_predictions_baseline_h5=tmp_path / "oos",
         validation_reports=tmp_path / "validation_reports",
         label_reports=tmp_path / "label_reports",
         feature_reports=tmp_path / "feature_reports",
@@ -228,18 +262,46 @@ def test_polars_production_feature_build(tmp_path: Path) -> None:
     assert io_summary["output_rows"] > 0, "run output_rows is zero"
 
     # output parquet written
-    pq_out = paths.feature_matrix_baseline_h20 / "baseline_h20.parquet"
+    pq_out = paths.feature_matrix_baseline_h5 / "baseline_h5.parquet"
     assert pq_out.exists(), "output parquet not written"
 
     # registry JSON files written
     for key in _REGISTRY_KEYS:
-        json_path = paths.feature_matrix_baseline_h20 / f"{key}.json"
+        json_path = paths.feature_matrix_baseline_h5 / f"{key}.json"
         assert json_path.exists(), f"registry JSON not written: {key}.json"
         loaded = json.loads(json_path.read_text(encoding="utf-8"))
         assert isinstance(loaded, list) and len(loaded) > 0
 
     # summary JSON written
-    summary_path = paths.feature_reports / "baseline_h20_summary.json"
+    summary_path = paths.feature_reports / "baseline_h5_summary.json"
     assert summary_path.exists(), "summary JSON not written"
     summary_loaded = json.loads(summary_path.read_text(encoding="utf-8"))
     assert summary_loaded["output_rows"] > 0
+
+
+def test_polars_scoring_feature_build_keeps_latest_model_eligible_rows_without_targets(tmp_path: Path) -> None:
+    cfg = load_baseline_feature_config()
+    pq = _make_polars_labeled(tmp_path)
+    paths = _make_test_paths(tmp_path, pq)
+    _make_polars_research(paths.research_ohlcv_daily)
+
+    data, summary, registry = _build_baseline_scoring_features_polars(paths, cfg)
+
+    assert data.height == 2
+    assert summary["output_rows"] == 2
+    assert summary["score_date"] == "2010-10-27"
+    assert registry["feature_cols"] == cfg["feature_columns"]
+    assert "target_class_5d" not in data.columns
+    assert "fwd_ret_5d" not in data.columns
+    for col in ("median_dollar_volume_60", "zero_volume_count_60", "history_bars"):
+        assert col in data.columns
+
+    with patch("quant_project_daily.features_baseline.reset_parquet_output_dir") as mock_reset:
+        mock_reset.side_effect = lambda p: p.mkdir(parents=True, exist_ok=True)
+        io_summary = run_baseline_scoring_features(paths=paths)
+
+    assert io_summary["output_rows"] == 2
+    scoring_dir = paths.repo_root / "data" / "feature_matrices" / "baseline_h5_scoring"
+    assert (scoring_dir / "baseline_h5_scoring.parquet").exists()
+    assert (scoring_dir / "feature_cols.json").exists()
+    assert (paths.feature_reports / "baseline_h5_scoring_summary.json").exists()

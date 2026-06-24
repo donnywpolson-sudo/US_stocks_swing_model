@@ -1,4 +1,4 @@
-baseline_h20:
+baseline_h5:
   min_total_oos_rows: 1000000
   min_fold_count: 20
   min_rank_ic_t_stat: 2.0

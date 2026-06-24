@@ -15,9 +15,9 @@ def _preds() -> pd.DataFrame:
                     "date": date,
                     "ticker": f"T{i}",
                     "raw_ticker": f"T{i}.US",
-                    "target_class_20d": 0,
-                    "fwd_ret_20d": (i - 4.5) / 100,
-                    "pred_score_20d": float(i),
+                    "target_class_5d": 0,
+                    "fwd_ret_5d": (i - 4.5) / 100,
+                    "pred_score_5d": float(i),
                 }
             )
     return pd.DataFrame(rows)
@@ -52,7 +52,7 @@ def test_rank_ic_direction_and_fold_metrics() -> None:
 
 def test_warnings_for_outliers_and_too_few_names() -> None:
     df = _preds().head(4).copy()
-    df.loc[df.index[0], "pred_score_20d"] = 99
+    df.loc[df.index[0], "pred_score_5d"] = 99
     summary, _ = build_metrics(df, {"round_trip_cost_bps": 25, "decile_buckets": 10, "quintile_buckets": 5, "score_outlier_abs_threshold": 5})
     assert "dates_with_too_few_names_for_deciles" in summary["warnings"]
     assert any("score_outlier" in w for w in summary["warnings"])

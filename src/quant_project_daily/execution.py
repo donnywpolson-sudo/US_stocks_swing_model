@@ -7,7 +7,7 @@ def cost_bps_to_return(round_trip_cost_bps: float) -> float:
     return float(round_trip_cost_bps) / 10_000.0
 
 
-def assign_score_buckets(preds: pd.DataFrame, buckets: int, score_col: str = "pred_score_20d") -> pd.Series:
+def assign_score_buckets(preds: pd.DataFrame, buckets: int, score_col: str = "pred_score_5d") -> pd.Series:
     ranks = preds.groupby("date", sort=False)[score_col].rank(method="first", ascending=True)
     counts = preds.groupby("date", sort=False)[score_col].transform("count")
     bucket = ((ranks - 1) * buckets / counts).astype(int) + 1
@@ -17,7 +17,7 @@ def assign_score_buckets(preds: pd.DataFrame, buckets: int, score_col: str = "pr
 def bucket_forward_returns(preds: pd.DataFrame, bucket_col: str) -> pd.DataFrame:
     return (
         preds.groupby(["date", bucket_col], sort=True)
-        .agg(row_count=("ticker", "size"), mean_fwd_ret_20d=("fwd_ret_20d", "mean"))
+        .agg(row_count=("ticker", "size"), mean_fwd_ret_5d=("fwd_ret_5d", "mean"))
         .reset_index()
     )
 
@@ -33,11 +33,11 @@ def daily_long_short_from_buckets(
     long_leg = (
         preds.loc[preds[bucket_col] == top_bucket]
         .groupby("date", sort=True)
-        .agg(long_count=("ticker", "size"), long_gross_return=("fwd_ret_20d", "mean"), long_hit_rate=("fwd_ret_20d", lambda s: float((s > 0).mean())))
+        .agg(long_count=("ticker", "size"), long_gross_return=("fwd_ret_5d", "mean"), long_hit_rate=("fwd_ret_5d", lambda s: float((s > 0).mean())))
     )
     short_leg = (
         preds.loc[preds[bucket_col] == bottom_bucket]
-        .assign(short_leg_return=lambda d: -d["fwd_ret_20d"])
+        .assign(short_leg_return=lambda d: -d["fwd_ret_5d"])
         .groupby("date", sort=True)
         .agg(short_count=("ticker", "size"), short_gross_return=("short_leg_return", "mean"), short_hit_rate=("short_leg_return", lambda s: float((s > 0).mean())))
     )

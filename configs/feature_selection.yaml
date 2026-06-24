@@ -1,7 +1,7 @@
-feature_set: expanded_h20
-version: expanded_h20_v1
-target_column: fwd_ret_20d
-class_target_column: target_class_20d
+feature_set: expanded_h5
+version: expanded_h5_v1
+target_column: fwd_ret_5d
+class_target_column: target_class_5d
 max_selected_features: 64
 min_non_null_pct: 0.50
 min_finite_pct: 0.99
