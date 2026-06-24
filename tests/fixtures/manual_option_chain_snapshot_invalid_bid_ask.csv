@@ -1,0 +1,2 @@
+snapshot_date,snapshot_time,underlying,expiration,dte,option_type,strike,bid,ask,mid,last,volume,open_interest,implied_volatility,delta,gamma,theta,vega,source,source_symbol
+2026-06-03,,CCC,2026-07-17,44,CALL,25,2.50,2.00,,2.25,10,20,0.55,0.48,0.08,-0.02,0.04,manual_fixture,CCC260717C00025000

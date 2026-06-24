@@ -1,0 +1,4 @@
+file_path,underlying,snapshot_date,snapshot_time,source,notes
+tests/fixtures/manual_option_chain_snapshot_aaa_template.csv,AAA,2026-06-01,15:45:00,manual_fixture,valid candidate fixture
+tests/fixtures/manual_option_chain_snapshot_zzz_template.csv,ZZZ,2026-06-02,,manual_fixture,valid non-candidate fixture
+tests/fixtures/manual_option_chain_snapshot_invalid_bid_ask.csv,CCC,2026-06-03,,manual_fixture,invalid bid ask fixture

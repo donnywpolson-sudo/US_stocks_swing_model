@@ -25,6 +25,15 @@ TEMPLATE_COLUMNS = [
     "source_symbol",
 ]
 
+MANIFEST_COLUMNS = [
+    "file_path",
+    "underlying",
+    "snapshot_date",
+    "snapshot_time",
+    "source",
+    "notes",
+]
+
 
 def test_stage17_manual_option_chain_template_header() -> None:
     template_path = Path("docs/examples/stage17_manual_option_chain_template.csv")
@@ -32,6 +41,14 @@ def test_stage17_manual_option_chain_template_header() -> None:
         rows = list(csv.reader(f))
 
     assert rows == [TEMPLATE_COLUMNS]
+
+
+def test_stage17_manual_snapshot_manifest_template_header() -> None:
+    template_path = Path("docs/examples/stage17_manual_snapshot_manifest_template.csv")
+    with template_path.open(newline="", encoding="utf-8") as f:
+        rows = list(csv.reader(f))
+
+    assert rows == [MANIFEST_COLUMNS]
 
 
 def test_stage17_manual_option_chain_mapping_guide_covers_required_cautions() -> None:
@@ -48,6 +65,10 @@ def test_stage17_manual_option_chain_mapping_guide_covers_required_cautions() ->
         "Keep `snapshot_date` separate from Stage 16 `score_date`",
         "not prove option liquidity",
         "not an option P&L test",
+        "`reports/options/stage17_manual_snapshot_batch_summary.json`",
+        "`reports/options/stage17_manual_snapshot_candidate_coverage.csv`",
+        "`reports/options/stage17_manual_snapshot_batch_failures.csv`",
+        "`options_liquidity_verified=false`",
     ]
     for phrase in required_phrases:
         assert phrase in guide

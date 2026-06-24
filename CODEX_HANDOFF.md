@@ -588,3 +588,516 @@
 
 ## Next recommended step
 - Review `docs/stage17_manual_option_chain_mapping.md`, then provide a real manually exported option-chain CSV path when ready for a separate import-validation run.
+
+---
+
+## Current run: Stage 17 real AMD Power E*TRADE option-chain import
+
+## What changed
+- Imported the real manually captured Power E*TRADE AMD option-chain CSV through Stage 17.
+- Extended Stage 17 normalization to accept the documented manual-template columns directly and map them into the existing internal option-chain schema.
+- Added validation coverage for template-column input, nonnegative `volume`/`open_interest`, and expiration after `snapshot_date`.
+- Did not modify raw stock data.
+- Did not add broker/API clients, add credentials, call external APIs, build option P&L, claim option liquidity/profitability/trade readiness, or run Stage 02-16/18-19.
+
+## Files changed
+- `src/quant_project_daily/option_chain_snapshots.py`
+- `tests/test_option_chain_snapshots.py`
+- Generated option artifacts under `data/options/raw_snapshots`, `data/options/normalized`, `data/options/candidate_linked`, and `reports/options`
+- `CODEX_HANDOFF.md`
+
+## Commands run
+- Read/inspected `manual_option_snapshots/AMD_2026-06-24_etrade_option_chain.csv`.
+- `pytest tests/test_option_chain_snapshots.py tests/test_stage17_manual_option_chain_docs.py -q`
+- `python scripts/stage17_import_option_chain_snapshots.py manual_option_snapshots\AMD_2026-06-24_etrade_option_chain.csv`
+- Targeted artifact validation for summary counts, output existence, required fields, bid/ask, nonnegative volume/open interest, expiration dates, call/put values, and `snapshot_date` versus `score_date`.
+- Targeted stale-name search for `h20`, `target_class_20d`, `fwd_ret_20d`, `pred_score_20d`, `baseline_h20`, and `target_h20` across active docs/configs/scripts/src/tests/README and option outputs.
+
+## Test results
+- Focused pytest: 10 passed.
+- Real input path: `manual_option_snapshots/AMD_2026-06-24_etrade_option_chain.csv`.
+- Input header matched `docs/examples/stage17_manual_option_chain_template.csv`.
+- Input rows: 20.
+- Normalized rows: 20.
+- Invalid/quarantined rows: 0.
+- Candidate-linked rows: 20.
+- Linked rows to Stage 16 `baseline_h5` daily candidates: 20.
+- Candidate tickers without option-chain rows: 1,039.
+- Option-chain tickers outside candidates: 0.
+- Unlinked option rows: 0.
+- Raw snapshot output: `data/options/raw_snapshots/AMD_2026-06-24_etrade_option_chain.csv`.
+- Normalized output: `data/options/normalized/AMD_2026-06-24_etrade_option_chain_normalized.csv`.
+- Candidate-linked output: `data/options/candidate_linked/AMD_2026-06-24_etrade_option_chain_candidate_linked.csv`.
+- Import summary output: `reports/options/AMD_2026-06-24_etrade_option_chain_import_summary.json`.
+- Snapshot date: `2026-06-24`.
+- Stage 16 score date: `2026-05-29`.
+- `snapshot_date_equals_score_date`: `false`.
+- `snapshot_matches_score_date_rows`: 0.
+- Required core field missing-value counts: none.
+- Bid greater than ask rows: 0.
+- Negative bid/ask rows: 0.
+- Negative volume rows: 0.
+- Negative open interest rows: 0.
+- Expiration not after snapshot date rows: 0.
+- Invalid call/put rows: 0.
+- Underlying tickers: `AMD`.
+- Call/put values: `C`, `P`.
+- Missing optional field counts: `snapshot_timestamp=20`, `underlying_price=20`, `DTE=0`, `mid=0`, `last=0`, `volume=0`, `open_interest=0`, `implied_volatility=0`, `delta=0`, `gamma=0`, `theta=0`, `vega=0`, `quote_timestamp=20`, `data_delay_status=20`.
+- Targeted stale-name search found no active stale h20/20d target/model names in checked paths.
+
+## Remaining work
+- Treat the AMD option-chain import as data collection and candidate review support only.
+- Do not infer option liquidity, execution quality, profitability, or trade readiness from successful import.
+- Future work may add a vendor-specific mapper or logger only if explicitly requested and after source/credential handling is approved.
+
+## Next recommended step
+- Review `reports/options/AMD_2026-06-24_etrade_option_chain_import_summary.json` and the normalized/candidate-linked AMD outputs before deciding whether to import more manual snapshots.
+
+---
+
+## Current run: Stage 17 manual snapshot batch manifest workflow
+
+## What changed
+- Added Stage 17 batch manifest import while preserving the existing single-file Stage 17 CSV import path.
+- Added manifest validation for exact columns, duplicate file paths, missing files, and manifest-vs-snapshot checks for underlying, snapshot date, optional snapshot time, and source.
+- Added batch reports under `reports/options`: batch summary JSON, candidate coverage CSV, and batch failures CSV.
+- Candidate coverage is one row per Stage 16 `baseline_h5` daily candidate and keeps `options_liquidity_verified=false`.
+- Added a docs manifest template and updated the Stage 17 mapping guide with storage, manifest, batch report, and review-only language.
+- Added fixture coverage for two valid manual snapshots plus one invalid bid/ask snapshot.
+- Did not modify raw stock data, add broker/API clients, add credentials, call external APIs, build option P&L, claim option liquidity/profitability/trade readiness, or rerun Stage 02-19.
+
+## Files changed
+- `src/quant_project_daily/option_chain_snapshots.py`
+- `scripts/stage17_import_option_chain_snapshots.py`
+- `docs/stage17_manual_option_chain_mapping.md`
+- `docs/examples/stage17_manual_snapshot_manifest_template.csv`
+- `tests/test_option_chain_snapshots.py`
+- `tests/test_stage17_manual_option_chain_docs.py`
+- `tests/fixtures/manual_option_chain_snapshot_aaa_template.csv`
+- `tests/fixtures/manual_option_chain_snapshot_zzz_template.csv`
+- `tests/fixtures/manual_option_chain_snapshot_invalid_bid_ask.csv`
+- `tests/fixtures/stage17_manual_snapshot_manifest.csv`
+- Generated fixture batch outputs under `data/options/**` and `reports/options`
+- `CODEX_HANDOFF.md`
+
+## Commands run
+- `pytest tests/test_option_chain_snapshots.py tests/test_stage17_manual_option_chain_docs.py -q`
+- `python scripts/stage17_import_option_chain_snapshots.py --manifest tests\fixtures\stage17_manual_snapshot_manifest.csv --candidates-path tests\fixtures\stage16_candidates_tiny.csv`
+- Targeted stale-name search for `h20`, `target_class_20d`, `fwd_ret_20d`, `pred_score_20d`, `baseline_h20`, and `target_h20` across active docs/configs/scripts/src/tests/README and option outputs.
+
+## Test results
+- Focused pytest: 12 passed.
+- Fixture batch manifest rows: 3.
+- Succeeded files: 2.
+- Failed files: 1.
+- Total successful input rows: 3.
+- Total normalized rows: 3.
+- Total candidate-linked rows: 3.
+- Invalid/quarantined rows: 0; row-level quarantine is not implemented in v1.
+- Batch failure: `tests/fixtures/manual_option_chain_snapshot_invalid_bid_ask.csv` failed with `ask must be greater than or equal to bid`.
+- Candidate coverage rows: 2.
+- Candidate tickers covered: 1 (`AAA`).
+- Candidate tickers without chain rows: 1 (`BBB`).
+- Option-chain tickers outside candidates: 1 (`ZZZ`).
+- Linked rows: 2.
+- Unlinked option rows: 1.
+- Snapshot-score date matching rows: 0.
+- Missing optional field counts: `snapshot_timestamp=1`, `underlying_price=3`, `DTE=0`, `mid=0`, `last=0`, `volume=0`, `open_interest=0`, `implied_volatility=0`, `delta=0`, `gamma=0`, `theta=0`, `vega=0`, `quote_timestamp=3`, `data_delay_status=3`.
+- Targeted stale-name search found no active stale h20/20d target/model names in checked paths.
+
+## Remaining work
+- Create a real `manual_option_snapshots/stage17_manual_snapshot_manifest.csv` only when more real manual snapshots are ready for batch import.
+- Keep manual option snapshots as candidate review data only.
+- Do not infer option liquidity, execution quality, profitability, or trade readiness from successful imports.
+- Add broker/API automation only if explicitly requested later with approved credential handling.
+
+## Next recommended step
+- Review `reports/options/stage17_manual_snapshot_batch_summary.json` and `reports/options/stage17_manual_snapshot_candidate_coverage.csv`, then prepare a real manual snapshot manifest when multiple real captures are available.
+
+---
+
+## Current run: Stage 17 real six-file Power E*TRADE batch import
+
+## What changed
+- Batch imported six real manually captured Power E*TRADE option-chain CSV snapshots through Stage 17 using `manual_option_snapshots/stage17_manual_snapshot_manifest.csv`.
+- Verified manifest columns, duplicate paths, file existence, and exact Stage 17 manual-template headers before importing.
+- Generated per-file raw snapshot, normalized option-chain, candidate-linked option-chain, and import summary outputs for AMD, MU, ORCL, PLTR, QCOM, and XOM.
+- Generated real batch summary, candidate coverage, and failures reports under `reports/options`.
+- Did not modify raw stock data, add broker/API clients, add credentials, call external APIs, build option P&L, claim option liquidity/profitability/trade readiness, or rerun Stage 02-16/18-19.
+
+## Files changed
+- Generated real option artifacts under `data/options/raw_snapshots`, `data/options/normalized`, `data/options/candidate_linked`, and `reports/options`
+- `CODEX_HANDOFF.md`
+
+## Commands run
+- Read/inspected `manual_option_snapshots/stage17_manual_snapshot_manifest.csv`.
+- Preflight validation for manifest columns, duplicate file paths, file existence, and CSV headers.
+- `python scripts/stage17_import_option_chain_snapshots.py --manifest manual_option_snapshots\stage17_manual_snapshot_manifest.csv`
+- Artifact validation for per-file outputs, batch outputs, required fields, bid/ask, nonnegative bid/ask/volume/open interest, expiration dates, call/put values, score/snapshot date separation, and `options_liquidity_verified`.
+- Targeted stale-name search for `h20`, `target_class_20d`, `fwd_ret_20d`, `pred_score_20d`, `baseline_h20`, and `target_h20` across active docs/configs/scripts/src/tests/README and option outputs.
+
+## Test results
+- No pytest was run because no import code changed in this run.
+- Manifest columns matched exactly: `file_path`, `underlying`, `snapshot_date`, `snapshot_time`, `source`, `notes`.
+- Manifest rows: 6.
+- Duplicate manifest file paths: 0.
+- All six listed CSV files existed.
+- All six CSV headers matched `docs/examples/stage17_manual_option_chain_template.csv`.
+- Succeeded files: 6.
+- Failed files: 0.
+- Total input rows: 120.
+- Total normalized rows: 120.
+- Total candidate-linked rows: 120.
+- Invalid/quarantined rows: 0.
+- Candidate coverage rows: 1,040.
+- Covered candidate tickers: 6 (`AMD`, `MU`, `ORCL`, `PLTR`, `QCOM`, `XOM`).
+- Uncovered candidate tickers: 1,034.
+- Chain tickers outside candidates: 0.
+- Linked rows: 120.
+- Unlinked option rows: 0.
+- Snapshot date: `2026-06-24`.
+- Stage 16 score date: `2026-05-29`.
+- Snapshot-score date matching rows: 0.
+- Snapshot-score date mismatch linked rows: 120.
+- Required core field missing-value counts: none.
+- Bid greater than ask rows: 0.
+- Negative bid/ask rows: 0.
+- Negative volume rows: 0.
+- Negative open interest rows: 0.
+- Expiration not after snapshot date rows: 0.
+- Invalid call/put rows: 0.
+- `options_liquidity_verified=true` rows: 0.
+- Missing optional field counts: `snapshot_timestamp=120`, `underlying_price=120`, `DTE=0`, `mid=0`, `last=0`, `volume=0`, `open_interest=0`, `implied_volatility=0`, `delta=0`, `gamma=0`, `theta=0`, `vega=0`, `quote_timestamp=120`, `data_delay_status=120`.
+- Output reports exist: `reports/options/stage17_manual_snapshot_batch_summary.json`, `reports/options/stage17_manual_snapshot_candidate_coverage.csv`, and `reports/options/stage17_manual_snapshot_batch_failures.csv`.
+- Per-file raw, normalized, candidate-linked, and summary outputs exist for AMD, MU, ORCL, PLTR, QCOM, and XOM.
+- Targeted stale-name search found no active stale h20/20d target/model names in checked paths.
+
+## Remaining work
+- Manual option snapshots remain candidate review data only.
+- Do not infer option liquidity, execution quality, profitability, or trade readiness from successful imports.
+- Snapshot date `2026-06-24` differs from Stage 16 score date `2026-05-29`; do not imply the chains existed on the signal score date.
+- Add broker/API automation only if explicitly requested later with approved credential handling.
+
+## Next recommended step
+- Review `reports/options/stage17_manual_snapshot_batch_summary.json` and `reports/options/stage17_manual_snapshot_candidate_coverage.csv`; collect more manual snapshots only when additional candidate review coverage is needed.
+
+---
+
+## Current run: Stage 17 manual snapshot quality diagnostics
+
+## What changed
+- Generated review-only Stage 17 manual snapshot quality diagnostics from existing real batch outputs.
+- Created `reports/options/stage17_manual_snapshot_quality_diagnostic.md`.
+- Created `reports/options/stage17_manual_snapshot_contract_quality.csv`.
+- Created `reports/options/stage17_manual_snapshot_ticker_quality.csv`.
+- Summarized snapshot quality, manual review coverage, candidate-linked option-chain rows, covered/uncovered candidate tickers, and score-date/snapshot-date mismatch.
+- Did not modify source, config, tests, raw stock data, model code, labels, features, gates, WFA, metrics, or Stage 02-19 outputs.
+- Did not add broker/API clients, credentials, external API calls, option P&L, option liquidity verification, profitability claims, or trade-readiness claims.
+
+## Files changed
+- Generated reports under `reports/options`
+- `CODEX_HANDOFF.md`
+
+## Commands run
+- Read/inspected `reports/options/stage17_manual_snapshot_batch_summary.json`.
+- Read/inspected `reports/options/stage17_manual_snapshot_candidate_coverage.csv`.
+- Read/inspected normalized and candidate-linked Stage 17 option-chain outputs under `data/options`.
+- Inline Python diagnostic generation for contract quality, ticker quality, and markdown report.
+- Output validation for report existence, row counts, covered tickers, date mismatch, and review-only wording.
+- Targeted stale-name search for `h20`, `target_class_20d`, `fwd_ret_20d`, `pred_score_20d`, `baseline_h20`, and `target_h20` across active docs/configs/scripts/src/tests/README and option outputs.
+
+## Test results
+- No pytest was run because no source/config/test code changed in this run.
+- Required input outputs existed: batch summary, candidate coverage, normalized option-chain files, and candidate-linked option-chain files.
+- Contract quality rows: 120.
+- Ticker quality rows: 6.
+- Covered candidate tickers: `AMD`, `MU`, `ORCL`, `PLTR`, `QCOM`, `XOM`.
+- Uncovered candidate tickers count: 1,034.
+- Chain tickers outside candidates: 0.
+- Candidate-linked option-chain rows analyzed: 120.
+- Snapshot date: `2026-06-24`.
+- Stage 16 score date: `2026-05-29`.
+- Snapshot-score date mismatch rows: 120.
+- The report states the option chains were captured after the signal score date and are not historical option chains for that signal date.
+- Ticker-level rows all include contracts captured, call/put counts, median/max spread percent, median/total volume, median/total open interest, rows with volume/open interest above zero, rows with bid <= ask, missing optional-field counts, and IV/Greek completeness flags.
+- Contract-level rows include bid, ask, mid, bid-ask spread, spread percent of mid, volume, open interest, implied volatility, Greeks, option type, strike, expiration, DTE, ticker, snapshot date, score date, and snapshot-score-date match flag.
+- The report uses the required review-only framing: snapshot quality, manual review coverage, and candidate-linked option-chain rows.
+- The report keeps `options_liquidity_verified=false` and does not claim option liquidity, execution quality, option P&L, profitability, or trade readiness.
+- Targeted stale-name search found no active stale h20/20d target/model names in checked paths.
+
+## Remaining work
+- Manual snapshots remain review data only.
+- Do not infer option liquidity, execution quality, profitability, or trade readiness from these diagnostics.
+- Do not use the 2026-06-24 option snapshots as historical option chains for the 2026-05-29 Stage 16 score date.
+- Future work can define explicit option liquidity criteria only if requested; option P&L/backtesting remains out of scope until reliable historical option data exists.
+
+## Next recommended step
+- Review `reports/options/stage17_manual_snapshot_quality_diagnostic.md` with the two diagnostic CSVs before deciding whether to collect additional manual snapshots or define explicit review filters.
+
+---
+
+## Current run: Stage 17 observed-chain review rubric
+
+## What changed
+- Added review-only contract rubric fields to `reports/options/stage17_manual_snapshot_contract_quality.csv`: `iv_present`, `greeks_present`, `spread_pct_bucket`, `volume_bucket`, `open_interest_bucket`, and `observed_snapshot_quality`.
+- Added review-only ticker rubric fields to `reports/options/stage17_manual_snapshot_ticker_quality.csv`, including contract label counts, spread buckets, rows with full Greeks, rows with IV, and `observed_ticker_review_summary`.
+- Created candidate-linked observed-chain review output at `reports/options/stage17_manual_snapshot_candidate_review.csv`.
+- Updated `reports/options/stage17_manual_snapshot_quality_diagnostic.md` with a `Review Rubric` section.
+- Did not modify source, config, tests, raw stock data, model code, labels, features, gates, WFA, metrics, broker/API code, credentials, or Stage 02-19 outputs.
+- Did not add option P&L simulation, profitability claims, verified liquidity claims, execution-quality claims, or trade-readiness wording.
+
+## Files changed
+- `reports/options/stage17_manual_snapshot_contract_quality.csv`
+- `reports/options/stage17_manual_snapshot_ticker_quality.csv`
+- `reports/options/stage17_manual_snapshot_candidate_review.csv`
+- `reports/options/stage17_manual_snapshot_quality_diagnostic.md`
+- `CODEX_HANDOFF.md`
+
+## Commands run
+- Inline Python rubric generation from existing Stage 17 diagnostics.
+- Inline Python validation for row counts, required columns, rubric section presence, and `options_liquidity_verified=false`.
+- Targeted stale-name search for `h20`, `target_class_20d`, `fwd_ret_20d`, `pred_score_20d`, `baseline_h20`, and `target_h20` across active docs/configs/scripts/src/tests/README and `reports/options`.
+
+## Test results
+- No pytest was run because no source/config/test code changed.
+- Contract rows: 120.
+- Ticker rows: 6.
+- Candidate review rows: 1,040.
+- Covered candidate tickers: 6.
+- Uncovered candidate tickers: 1,034.
+- Snapshot-score date mismatch contract rows: 120.
+- `options_liquidity_verified=true` rows: 0.
+- Contract review label counts: `complete_fields=110`, `wide_spread=8`, `sparse_activity=2`, `incomplete_fields=0`.
+- Ticker review summary counts: `complete_fields=3`, `wide_spread=3`, `sparse_activity=0`, `incomplete_fields=0`.
+- Targeted stale-name search found no active stale h20/20d target/model names in checked paths.
+
+## Remaining work
+- Manual snapshots remain review data only.
+- The 2026-06-24 option snapshots are not historical option chains for the 2026-05-29 Stage 16 score date.
+- Review labels are observed snapshot heuristics only and should not be used as trade selection, verified option liquidity, execution quality, option P&L, profitability, or trade readiness.
+
+## Next recommended step
+- Review the candidate-linked output `reports/options/stage17_manual_snapshot_candidate_review.csv` before deciding whether to collect more manual snapshots or define additional review filters.
+
+---
+
+## Current run: Stage 17 next manual snapshot targets
+
+## What changed
+- Created `reports/options/stage17_next_manual_snapshot_targets.csv` from the current Stage 16 h5 daily candidates and Stage 17 candidate review coverage.
+- Created `reports/options/stage17_next_manual_snapshot_targets.md` with uncovered 25m/50m proxy counts and top 10 bullish/bearish manual capture targets.
+- Excluded existing manual snapshot tickers: `AMD`, `MU`, `ORCL`, `PLTR`, `QCOM`, and `XOM`.
+- Kept the report framed as a manual snapshot data-collection priority list only.
+- Did not modify source, config, tests, raw stock data, model code, labels, features, gates, WFA, metrics, broker/API code, credentials, or Stage 02-19 outputs.
+- Did not add option P&L simulation, profitability claims, verified liquidity claims, execution-quality claims, or trade-readiness wording.
+
+## Files changed
+- `reports/options/stage17_next_manual_snapshot_targets.csv`
+- `reports/options/stage17_next_manual_snapshot_targets.md`
+- `CODEX_HANDOFF.md`
+
+## Commands run
+- Inspected `reports/options/stage17_manual_snapshot_candidate_review.csv`.
+- Inspected `reports/signals/baseline_h5_daily_underlying_candidates.csv`.
+- Inline Python generation for `stage17_next_manual_snapshot_targets.csv` and `stage17_next_manual_snapshot_targets.md`.
+- Inline Python validation for output existence, exact columns, row counts, covered ticker exclusion, top/bottom signal deciles, proxy counts, and data-collection wording.
+
+## Test results
+- No pytest was run because no source/config/test code changed.
+- Stage 16 candidate rows: 1,040.
+- Output target rows: 1,034.
+- Covered tickers excluded: `AMD`, `MU`, `ORCL`, `PLTR`, `QCOM`, `XOM`.
+- Uncovered targets passing 50m Stooq-only underlying proxy: 311.
+- Uncovered targets passing 25m Stooq-only underlying proxy: 433.
+- Output contains only top/bottom signal-decile rows.
+- Output contains no `already_has_manual_snapshot=true` rows.
+- Top 10 bullish capture targets: `LBRT`, `AROC`, `NE`, `CNX`, `MLI`, `SU`, `GLNG`, `PBR`, `PBR-A`, `VTR`.
+- Top 10 bearish capture targets: `MULL`, `IONX`, `ORCX`, `MUU`, `CAR`, `RKLX`, `SOXL`, `UMAC`, `TECL`, `PLTU`.
+
+## Remaining work
+- Manual option snapshots remain review data only.
+- The target list is not a trade recommendation list.
+- Option liquidity, execution quality, option P&L, profitability, and trade readiness remain unvalidated.
+
+## Next recommended step
+- Use `reports/options/stage17_next_manual_snapshot_targets.md` to pick the next manual option-chain snapshots to capture, then import those snapshots through the existing Stage 17 manual workflow.
+
+---
+
+## Current run: Manual option snapshot file copy
+
+## What changed
+- Copied the 10 provided Power E*TRADE option-chain CSVs from `C:\Users\donny\Downloads` into `manual_option_snapshots`.
+- Confirmed `manual_option_snapshots/stage17_manual_snapshot_manifest.csv` references 16 snapshot files.
+- Did not run Stage 17 import in this step.
+- Did not modify source, config, tests, raw stock data, model code, labels, features, gates, WFA, metrics, broker/API code, or credentials.
+
+## Files changed
+- `manual_option_snapshots/LBRT_2026-06-24_etrade_option_chain.csv`
+- `manual_option_snapshots/AROC_2026-06-24_etrade_option_chain.csv`
+- `manual_option_snapshots/NE_2026-06-24_etrade_option_chain.csv`
+- `manual_option_snapshots/CNX_2026-06-24_etrade_option_chain.csv`
+- `manual_option_snapshots/MLI_2026-06-24_etrade_option_chain.csv`
+- `manual_option_snapshots/MULL_2026-06-24_etrade_option_chain.csv`
+- `manual_option_snapshots/IONX_2026-06-24_etrade_option_chain.csv`
+- `manual_option_snapshots/ORCX_2026-06-24_etrade_option_chain.csv`
+- `manual_option_snapshots/MUU_2026-06-24_etrade_option_chain.csv`
+- `manual_option_snapshots/CAR_2026-06-24_etrade_option_chain.csv`
+- `CODEX_HANDOFF.md`
+
+## Commands run
+- Verified the 10 provided CSV files existed under `C:\Users\donny\Downloads`.
+- Copied the 10 CSV files into `manual_option_snapshots`.
+- Validated the Stage 17 manual snapshot manifest against the filesystem.
+
+## Test results
+- Manifest rows: 16.
+- Present files: 16.
+- Missing files: 0.
+- Manifest tickers present: `AMD`, `MU`, `ORCL`, `PLTR`, `QCOM`, `XOM`, `LBRT`, `AROC`, `NE`, `CNX`, `MLI`, `MULL`, `IONX`, `ORCX`, `MUU`, `CAR`.
+
+## Remaining work
+- Run the Stage 17 manual batch import when ready.
+- Manual option snapshots remain review data only and do not validate option liquidity, execution quality, option P&L, profitability, or trade readiness.
+
+## Next recommended step
+- Run the existing Stage 17 batch import against `manual_option_snapshots/stage17_manual_snapshot_manifest.csv`.
+
+---
+
+## Current run: Stage 17 expanded real manual snapshot batch import
+
+## What changed
+- Ran the real Stage 17 manual snapshot batch import using `manual_option_snapshots/stage17_manual_snapshot_manifest.csv`.
+- Refreshed per-file raw snapshot outputs, normalized option-chain outputs, candidate-linked option-chain outputs, and per-file import summaries for 16 Power E*TRADE manual snapshot CSVs.
+- Refreshed `reports/options/stage17_manual_snapshot_batch_summary.json`.
+- Refreshed `reports/options/stage17_manual_snapshot_candidate_coverage.csv`.
+- Refreshed `reports/options/stage17_manual_snapshot_batch_failures.csv`.
+- Refreshed review-only diagnostics: `reports/options/stage17_manual_snapshot_quality_diagnostic.md`, `reports/options/stage17_manual_snapshot_contract_quality.csv`, `reports/options/stage17_manual_snapshot_ticker_quality.csv`, and `reports/options/stage17_manual_snapshot_candidate_review.csv`.
+- Did not modify source, config, tests, raw stock data, model code, labels, features, gates, WFA, metrics, broker/API code, or credentials.
+- Did not rerun Stage 02-16 or Stage 18-19.
+- Did not add option P&L simulation, profitability claims, verified liquidity claims, execution-quality claims, or trade-readiness wording.
+
+## Files changed
+- Generated Stage 17 outputs under `data/options/raw_snapshots`
+- Generated Stage 17 outputs under `data/options/normalized`
+- Generated Stage 17 outputs under `data/options/candidate_linked`
+- Generated Stage 17 reports under `reports/options`
+- `CODEX_HANDOFF.md`
+
+## Commands run
+- Read the goal objective file from `C:\Users\donny\.codex\attachments\1b686c41-66d1-4203-a3dd-69cd25452619\goal-objective.md`.
+- Inspected `manual_option_snapshots/stage17_manual_snapshot_manifest.csv`.
+- Inspected Stage 17 import code and CLI help.
+- Inline Python preflight validated manifest columns, expected tickers, duplicate paths, file existence, and all 16 CSV headers against the Stage 17 manual template schema.
+- Ran `python scripts/stage17_import_option_chain_snapshots.py --manifest manual_option_snapshots/stage17_manual_snapshot_manifest.csv`.
+- Inline Python refreshed review-only contract, ticker, candidate review, and markdown diagnostics.
+- Inline Python validation checked per-file outputs, batch counts, coverage counts, core fields, bid/ask ordering, nonnegative numeric fields, expiration after snapshot date, valid call/put values, separate `score_date` and `snapshot_date`, diagnostics row counts, and review-only wording.
+
+## Test results
+- No pytest was run because no source/config/test code changed in this run.
+- Manifest rows: 16.
+- Successful files: 16.
+- Failed files: 0.
+- Total input rows: 318.
+- Total normalized rows: 318.
+- Total linked rows: 318.
+- Invalid/quarantined rows: 0.
+- Covered candidate tickers: 16.
+- Uncovered candidate tickers: 1,024.
+- Chain tickers outside candidates: 0.
+- Snapshot-score date mismatch linked rows: 318.
+- `options_liquidity_verified=true` rows: 0.
+- Review diagnostic contract rows: 318.
+- Review diagnostic ticker rows: 16.
+- Review diagnostic candidate rows: 1,040.
+- Missing optional field counts: `snapshot_timestamp=318`, `underlying_price=318`, `DTE=0`, `mid=0`, `last=0`, `volume=0`, `open_interest=0`, `implied_volatility=0`, `delta=0`, `gamma=0`, `theta=0`, `vega=0`, `quote_timestamp=318`, `data_delay_status=318`.
+- Contract review label counts: `complete_fields=120`, `wide_spread=181`, `sparse_activity=17`, `incomplete_fields=0`.
+- Ticker review summary counts: `complete_fields=3`, `wide_spread=13`, `sparse_activity=0`, `incomplete_fields=0`.
+- Batch failures report exists with header only and no data rows.
+- The refreshed quality diagnostic states that 2026-06-24 option snapshots are not historical option chains for the 2026-05-29 Stage 16 score date.
+
+## Remaining work
+- Manual option snapshots remain review data only.
+- The refreshed diagnostics do not validate option liquidity, execution quality, option P&L, profitability, or trade readiness.
+- Any future option liquidity criteria or option P&L/backtesting work should be requested explicitly and should use appropriate option-chain history.
+
+## Next recommended step
+- Review `reports/options/stage17_manual_snapshot_quality_diagnostic.md` and `reports/options/stage17_manual_snapshot_candidate_review.csv` before deciding whether to collect more snapshots or define explicit review filters.
+
+---
+
+## Current run: h5 / Stage 16 / Stage 17 checkpoint audit
+
+## Current project state
+- Active naming remains h5 / 5d.
+- Stage 16 daily underlying candidate export exists at `reports/signals/baseline_h5_daily_underlying_candidates.csv`.
+- Stage 16 candidate rows: 1,040.
+- Stage 16 score date represented: `2026-05-29`.
+- Stage 17 expanded manual Power E*TRADE snapshot batch import is refreshed.
+- Stage 17 manifest rows: 16.
+- Stage 17 successful files: 16.
+- Stage 17 failed files: 0.
+- Stage 17 total input rows: 318.
+- Stage 17 total normalized rows: 318.
+- Stage 17 total linked rows: 318.
+- Stage 17 covered candidate tickers: 16.
+- Stage 17 uncovered candidate tickers: 1,024.
+- Stage 17 chain tickers outside candidates: 0.
+- Stage 17 snapshot-score date mismatch linked rows: 318.
+- `options_liquidity_verified=true` rows: 0.
+- Review diagnostic contract rows: 318.
+- Review diagnostic ticker rows: 16.
+- Review diagnostic candidate rows: 1,040.
+
+## Dirty worktree classification
+- Commit-eligible source/script/doc/test changes:
+  - `docs/stage17_manual_option_chain_mapping.md`
+  - `scripts/stage17_import_option_chain_snapshots.py`
+  - `src/quant_project_daily/option_chain_snapshots.py`
+  - `tests/test_option_chain_snapshots.py`
+  - `tests/test_stage17_manual_option_chain_docs.py`
+  - `docs/examples/stage17_manual_snapshot_manifest_template.csv`
+  - `tests/fixtures/manual_option_chain_snapshot_aaa_template.csv`
+  - `tests/fixtures/manual_option_chain_snapshot_invalid_bid_ask.csv`
+  - `tests/fixtures/manual_option_chain_snapshot_zzz_template.csv`
+  - `tests/fixtures/stage17_manual_snapshot_manifest.csv`
+- Handoff/local checkpoint file:
+  - `CODEX_HANDOFF.md`
+- Generated or local ignored artifacts:
+  - `data/**`
+  - `reports/**`
+  - `manual_option_snapshots/*.csv`
+  - `manual_option_snapshots/stage17_manual_snapshot_manifest.csv`
+
+## .gitignore verification
+- `.gitignore` ignores `data/**`.
+- `.gitignore` ignores `reports/**`.
+- `.gitignore` ignores `*.csv`, which protects manual option snapshot CSVs and the manual snapshot manifest unless a path is explicitly unignored.
+- `git check-ignore -v` confirmed ignore protection for representative Stage 17 data outputs, report outputs, manual snapshot CSVs, the manual snapshot manifest, and the Stage 16 daily candidate report.
+
+## Commands run
+- `git status --short --untracked-files=all`
+- `git diff --name-only`
+- `git ls-files --others --exclude-standard`
+- `git diff --stat`
+- `git check-ignore -v data/options/normalized/LBRT_2026-06-24_etrade_option_chain_normalized.csv reports/options/stage17_manual_snapshot_batch_summary.json reports/options/stage17_manual_snapshot_candidate_review.csv manual_option_snapshots/LBRT_2026-06-24_etrade_option_chain.csv manual_option_snapshots/stage17_manual_snapshot_manifest.csv reports/signals/baseline_h5_daily_underlying_candidates.csv`
+- Inline Python artifact/count validation for Stage 16 candidate export and Stage 17 batch/coverage/review outputs.
+- `pytest tests/test_option_chain_snapshots.py tests/test_stage17_manual_option_chain_docs.py -q`
+- Targeted stale-name search for `h20`, `target_class_20d`, `fwd_ret_20d`, `pred_score_20d`, `baseline_h20`, and `target_h20` across active docs/configs/scripts/src/tests/README and `reports/options`.
+
+## Test and check results
+- Focused pytest result: 12 passed.
+- Targeted stale-name search found no active stale h20/20d target/model names in checked paths.
+- Required Stage 16 and Stage 17 output files exist and are non-empty.
+- Stage 17 review-only wording remains present in `reports/options/stage17_manual_snapshot_quality_diagnostic.md`.
+- Stage 17 diagnostic wording states that the `2026-06-24` option snapshots are not historical option chains for the `2026-05-29` Stage 16 score date.
+
+## Remaining blockers and caveats
+- Manual option snapshots remain review data only.
+- The current workflow does not validate option liquidity, execution quality, option P&L, profitability, or trade readiness.
+- The dirty worktree is intentionally not committed in this run.
+
+## Next recommended scope
+- If requested, prepare a commit containing only the commit-eligible Stage 17 source/script/doc/test/template changes and exclude generated/local artifacts.
+- Do not add broker/API automation, option P&L, model tuning, expanded features, feature discovery, feature selection, or frozen feature stages without a new explicit scope.
