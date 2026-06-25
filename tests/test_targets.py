@@ -1,6 +1,8 @@
 import pandas as pd
 
+from quant_project_daily.config import ProjectPaths
 from quant_project_daily.targets import generate_targets
+from quant_project_daily.targets import run_targets
 
 
 def _research_frame(tickers: list[str], rows: int = 25) -> pd.DataFrame:
@@ -100,3 +102,58 @@ def test_per_date_top_bottom_20pct_class_assignment() -> None:
     assert got["T1"] == 0
     assert got["T2"] == 0
     assert got["T3"] == 0
+
+
+def test_run_targets_uses_stage03_raw_split_gaps(tmp_path, monkeypatch) -> None:
+    paths = ProjectPaths(
+        repo_root=tmp_path,
+        raw_txt=tmp_path / "data" / "raw_txt",
+        raw_manifest=tmp_path / "data" / "raw_manifest" / "raw_manifest.parquet",
+        validated=tmp_path / "data" / "validated",
+        normalized=tmp_path / "data" / "normalized",
+        causal=tmp_path / "data" / "causal",
+        research_ohlcv_daily=tmp_path / "data" / "research_ohlcv_daily",
+        labeled_target_h5=tmp_path / "data" / "labeled" / "target_h5",
+        feature_matrix_baseline_h5=tmp_path / "data" / "feature_matrices" / "baseline_h5",
+        feature_matrix_expanded_h5=tmp_path / "data" / "feature_matrices" / "expanded_h5",
+        frozen_features_expanded_h5_v1=tmp_path / "data" / "frozen_features" / "expanded_h5_v1",
+        oos_predictions_baseline_h5=tmp_path / "data" / "oos_predictions" / "baseline_h5",
+        validation_reports=tmp_path / "reports" / "validation",
+        label_reports=tmp_path / "reports" / "labels",
+        feature_reports=tmp_path / "reports" / "features",
+        wfa_reports=tmp_path / "reports" / "wfa",
+        metrics_reports=tmp_path / "reports" / "metrics",
+        gates_reports=tmp_path / "reports" / "gates",
+    )
+    paths.research_ohlcv_daily.mkdir(parents=True)
+    paths.validation_reports.mkdir(parents=True)
+    monkeypatch.setattr(
+        "quant_project_daily.targets.reset_parquet_output_dir",
+        lambda path: path.mkdir(parents=True, exist_ok=True),
+    )
+
+    dates = pd.bdate_range("2010-01-01", periods=8)
+    pd.DataFrame(
+        {
+            "date": dates,
+            "ticker": ["A"] * len(dates),
+            "raw_ticker": ["A.US"] * len(dates),
+            "open": [10.0] * len(dates),
+            "high": [11.0] * len(dates),
+            "low": [9.0] * len(dates),
+            "close": [10.5] * len(dates),
+            "volume": [1000] * len(dates),
+            "dollar_volume": [10_500.0] * len(dates),
+            "model_eligible": [True] * len(dates),
+        }
+    ).to_parquet(paths.research_ohlcv_daily / "part.parquet", index=False)
+    pd.DataFrame([{"ticker": "A", "date": "2010-01-06"}]).to_csv(
+        paths.validation_reports / "raw_split_like_gaps.csv",
+        index=False,
+    )
+    assert not (paths.validation_reports / "split_like_gaps.csv").exists()
+
+    summary = run_targets(paths)
+
+    assert summary["invalid_reason_counts"]["split_like_gap_in_target_window_5d"] == 3
+    assert summary["mutually_exclusive_invalid_reason_counts"]["split_like_gap_in_target_window_5d"] == 3

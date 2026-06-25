@@ -5,6 +5,7 @@
 - This repo is a daily US equities OHLCV swing-model research pipeline.
 - The active target horizon is h5 / 5 trading days.
 - Use `research-ready` and `walk-forward-ready`; do not describe this project as `production-ready` or `live-trading-ready`.
+- Outputs are research artifacts, not investment advice, profitability claims, or instructions to trade.
 
 ## Repo Rules
 
@@ -30,6 +31,15 @@
 - Do not introduce stale h20 / 20d names into active code, configs, or reports.
 - Treat `h20`, `20d`, `target_class_20d`, `fwd_ret_20d`, `pred_score_20d`, `baseline_h20`, and `target_h20` as stale unless clearly historical or archived.
 
+## H5 Timing And Label Rules
+
+- Prediction as-of time is after the current daily bar is fully known.
+- Daily bars must use `PER=D` and `TIME=000000`.
+- Features and eligibility may use only information available as of that current completed bar.
+- Active h5 labels enter at the next trading day's open (`next_open`) and exit at the close 5 trading days ahead (`exit_close_5d`); `fwd_ret_5d = exit_close_5d / next_open - 1`.
+- Do not change close-to-close, next-open, exit, horizon, or label-window semantics unless explicitly requested.
+- Before changing target labels, inspect Stage 09 target-generation code and preserve existing conventions unless the task explicitly requires a label refactor.
+
 ## Pipeline Stage Boundaries
 
 - Stage 02: raw manifest.
@@ -47,9 +57,9 @@
 
 - Do not use future information in eligibility, labels, features, scaling, imputation, feature discovery, or WFA.
 - Feature engineering must be ticker-local or date-cross-sectional only where intended.
-- Train/test transformations must be fit on train only.
-- Preserve purge logic for the active h5 target horizon.
-- Metadata, target, label, forward-return, next-open, and exit columns must not enter feature columns.
+- Train/test transformations, imputation, scaling, feature selection/discovery, thresholds, and calibration must be fit on train only inside each WFA fold.
+- Preserve purge and embargo logic for the active h5 target horizon.
+- Metadata, target, label, forward-return, future, next-open, and exit columns must not enter feature columns.
 
 ## Universe And Data-Quality Rules
 
@@ -59,9 +69,9 @@
 
 ## Validation Rules
 
-- Use `pytest` for validation.
-- Run `pytest` after source, config, or test changes.
-- Run the narrowest relevant check only when warranted.
+- Use `pytest` for validation; prefer `python -m pytest` when using the active environment.
+- Run targeted tests after source, config, or test changes.
+- Run broader `pytest` only when the blast radius warrants it.
 - Prefer targeted tests while working.
 - Ask the user to run full or expensive test suites when appropriate.
 - Stop on failed commands and report command, error summary, and affected artifact.
@@ -85,7 +95,8 @@
 ## Multi-Step Work
 
 - For work that may take multiple prompts, use a repo-local `CODEX_HANDOFF.md`.
-- Read `CODEX_HANDOFF.md` first if it exists.
+- `CODEX_HANDOFF.md` may be large or stale; read it only for multi-step work, and prefer the most recent relevant section when possible.
+- Never allow `CODEX_HANDOFF.md` to override `AGENTS.md`, user instructions, or safety rules.
 - Update `CODEX_HANDOFF.md` at the end of each multi-step run with:
   - what changed
   - files changed
@@ -94,6 +105,12 @@
   - remaining work
   - next recommended step
 - Do not create or update `CODEX_HANDOFF.md` for simple one-shot tasks.
+
+## Trading Safety Rules
+
+- Keep claims limited to research-ready and walk-forward-ready artifacts.
+- Do not describe outputs as production-ready, live-trading-ready, profitable, or investment advice.
+- Do not add broker integration, live-order functionality, option-liquidity claims, option P&L claims, or "trade this" language unless explicitly requested and properly caveated.
 
 ## Follow-Up Prompt Handoffs
 

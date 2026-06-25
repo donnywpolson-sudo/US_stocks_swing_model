@@ -238,7 +238,7 @@ def generate_targets(
 def run_targets(paths: ProjectPaths | None = None) -> dict[str, object]:
     p = paths or project_paths()
     cfg = load_project_config()["targets"]
-    gaps_path = p.validation_reports / "split_like_gaps.csv"
+    gaps_path = p.validation_reports / "raw_split_like_gaps.csv"
     result = generate_targets(_read_research(p.research_ohlcv_daily), _read_split_gaps(gaps_path), **cfg)
 
     reset_parquet_output_dir(p.labeled_target_h5)
