@@ -31,6 +31,8 @@ class ProjectPaths:
     metrics_reports: Path
     gates_reports: Path
     feature_matrix_baseline_h5_scoring: Path | None = None
+    feature_matrix_long_only_h5_phase1: Path | None = None
+    oos_predictions_long_only_h5_phase1: Path | None = None
     signals_reports: Path | None = None
     option_chain_raw_snapshots: Path | None = None
     option_chain_normalized: Path | None = None
@@ -64,6 +66,10 @@ def project_paths(config: dict[str, Any] | None = None) -> ProjectPaths:
         research_ohlcv_daily=rel("research_ohlcv_daily"),
         labeled_target_h5=rel("labeled_target_h5"),
         feature_matrix_baseline_h5=rel("feature_matrix_baseline_h5"),
+        feature_matrix_long_only_h5_phase1=rel_optional(
+            "feature_matrix_long_only_h5_phase1",
+            "data/feature_matrices/long_only_h5_phase1",
+        ),
         feature_matrix_baseline_h5_scoring=rel_optional(
             "feature_matrix_baseline_h5_scoring",
             "data/feature_matrices/baseline_h5_scoring",
@@ -71,6 +77,10 @@ def project_paths(config: dict[str, Any] | None = None) -> ProjectPaths:
         feature_matrix_expanded_h5=rel("feature_matrix_expanded_h5"),
         frozen_features_expanded_h5_v1=rel("frozen_features_expanded_h5_v1"),
         oos_predictions_baseline_h5=rel("oos_predictions_baseline_h5"),
+        oos_predictions_long_only_h5_phase1=rel_optional(
+            "oos_predictions_long_only_h5_phase1",
+            "data/oos_predictions/long_only_h5_phase1",
+        ),
         validation_reports=rel("validation_reports"),
         label_reports=rel("label_reports"),
         feature_reports=rel("feature_reports"),

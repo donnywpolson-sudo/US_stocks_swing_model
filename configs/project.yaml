@@ -8,9 +8,11 @@ paths:
   labeled_target_h5: data/labeled/target_h5
   feature_matrix_baseline_h5: data/feature_matrices/baseline_h5
   feature_matrix_baseline_h5_scoring: data/feature_matrices/baseline_h5_scoring
+  feature_matrix_long_only_h5_phase1: data/feature_matrices/long_only_h5_phase1
   feature_matrix_expanded_h5: data/feature_matrices/expanded_h5
   frozen_features_expanded_h5_v1: data/frozen_features/expanded_h5_v1
   oos_predictions_baseline_h5: data/oos_predictions/baseline_h5
+  oos_predictions_long_only_h5_phase1: data/oos_predictions/long_only_h5_phase1
   validation_reports: reports/validation
   label_reports: reports/labels
   feature_reports: reports/features

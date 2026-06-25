@@ -1,0 +1,7 @@
+feature_set: long_only_h5_phase1_no_momentum_trend
+base_config_path: configs/long_only_h5_phase1_features.yaml
+output_path: data/feature_matrices/long_only_h5_phase1_no_momentum_trend
+exclude_feature_columns:
+  - mom_20d_vol_adj
+  - mom_60d_vol_adj
+  - trend_pos_ret_frac_20d
