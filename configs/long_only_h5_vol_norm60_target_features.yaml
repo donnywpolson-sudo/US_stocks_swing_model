@@ -1,0 +1,17 @@
+feature_set: long_only_h5_vol_norm60_target
+base_config_path: configs/baseline_features.yaml
+input_path: data/labeled/target_h5_vol_norm60_experimental
+output_path: data/feature_matrices/long_only_h5_vol_norm60_target
+filter_label_valid_column: label_valid_5d_vol_norm60
+
+target_columns:
+  - fwd_ret_5d
+  - label_valid_5d
+  - target_class_5d
+  - target_long_top20_5d
+  - target_short_bottom20_5d
+  - fwd_ret_5d_vol_norm60
+  - label_valid_5d_vol_norm60
+  - target_class_5d_vol_norm60
+  - target_long_top20_5d_vol_norm60
+  - target_short_bottom20_5d_vol_norm60

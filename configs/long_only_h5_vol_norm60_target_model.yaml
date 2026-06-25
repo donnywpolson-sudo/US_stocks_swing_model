@@ -1,0 +1,7 @@
+model_name: long_only_h5_vol_norm60_target_ridge
+model_type: ridge_regression
+target_column: target_class_5d_vol_norm60
+forward_return_column: fwd_ret_5d
+normalized_forward_return_column: fwd_ret_5d_vol_norm60
+prediction_column: pred_score_5d
+ridge_alpha: 1.0

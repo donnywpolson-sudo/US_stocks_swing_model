@@ -31,9 +31,19 @@ PHASE1_ONLY_COLUMNS = [
     "dollar_volume_ratio_20d_60d",
 ]
 
+PHASE2_CORE_COLUMNS = [
+    "vol_ratio_10d_60d",
+    "range_compression_20d_60d",
+    "vol_regime_rank_by_date",
+    "sma_slope_agreement_20_50",
+    "sma_stack_score_20_50_200",
+    "dollar_volume_accel_10d_60d",
+]
+
 NO_MOMENTUM_TREND = "long_only_h5_phase1_no_momentum_trend"
 VOL_LIQ_ONLY = "long_only_h5_phase1_vol_liq_only"
 VOL20_60_ONLY = "long_only_h5_vol20_60_only"
+PHASE2_CORE = "long_only_h5_phase2_core"
 
 
 def _labeled_frame(rows: int = 100) -> pd.DataFrame:
@@ -221,6 +231,7 @@ def test_ablation_variant_configs_include_and_exclude_expected_features() -> Non
     no_mom = load_long_only_h5_feature_config(NO_MOMENTUM_TREND)
     vol_liq = load_long_only_h5_feature_config(VOL_LIQ_ONLY)
     vol20_60 = load_long_only_h5_feature_config(VOL20_60_ONLY)
+    phase2 = load_long_only_h5_feature_config(PHASE2_CORE)
 
     for cfg in [no_mom, vol_liq]:
         assert "vol_ratio_5d_20d" in cfg["feature_columns"]
@@ -254,6 +265,54 @@ def test_ablation_variant_configs_include_and_exclude_expected_features() -> Non
         "exit_close_5d",
     ]:
         assert col not in vol20_60["feature_columns"]
+
+    assert len(phase2["feature_columns"]) == 61
+    for col in PHASE2_CORE_COLUMNS:
+        assert col in phase2["feature_columns"]
+    for col in PHASE1_ONLY_COLUMNS + ["target_class_5d", "fwd_ret_5d", "next_open", "exit_close_5d"]:
+        assert col not in phase2["feature_columns"]
+
+
+def test_phase2_core_features_are_trailing_only_and_same_date_ranked(tmp_path: Path) -> None:
+    labeled_path = tmp_path / "target_h5.parquet"
+    base = _labeled_frame(rows=100)
+    base.to_parquet(labeled_path, index=False)
+    paths = _paths(tmp_path, labeled_path)
+    cfg = load_long_only_h5_feature_config(PHASE2_CORE)
+
+    base_data, _, _ = _build_long_only_h5_features_polars(paths, cfg)
+
+    changed = base.copy()
+    changed.loc[(changed["ticker"] == "A") & (changed["date"] >= pd.Timestamp("2020-04-15")), ["close", "high", "low", "volume", "dollar_volume"]] = [
+        9999.0,
+        10000.0,
+        9998.0,
+        9_999_999,
+        99_999_999.0,
+    ]
+    changed_path = tmp_path / "target_h5_changed.parquet"
+    changed.to_parquet(changed_path, index=False)
+    changed_paths = _paths(tmp_path, changed_path)
+    changed_data, _, _ = _build_long_only_h5_features_polars(changed_paths, cfg)
+
+    base_pd = base_data.to_pandas().sort_values(["ticker", "date"]).reset_index(drop=True)
+    changed_pd = changed_data.to_pandas().sort_values(["ticker", "date"]).reset_index(drop=True)
+    early = pd.to_datetime(base_pd["date"]) < pd.Timestamp("2020-04-15")
+    for col in PHASE2_CORE_COLUMNS:
+        pd.testing.assert_series_equal(
+            base_pd.loc[early, col].reset_index(drop=True),
+            changed_pd.loc[early, col].reset_index(drop=True),
+            check_names=False,
+        )
+
+    check_date = base_pd.loc[base_pd["vol_ratio_10d_60d"].notna(), "date"].iloc[-1]
+    same_day = base_pd.loc[base_pd["date"] == check_date].copy()
+    expected_rank = same_day["vol_ratio_10d_60d"].rank(method="average") / len(same_day)
+    pd.testing.assert_series_equal(
+        same_day["vol_regime_rank_by_date"].reset_index(drop=True),
+        expected_rank.reset_index(drop=True),
+        check_names=False,
+    )
 
 
 def test_ablation_variant_feature_run_writes_variant_path_only(tmp_path: Path) -> None:
@@ -289,6 +348,25 @@ def test_vol20_60_only_feature_run_writes_variant_path_only(tmp_path: Path) -> N
     assert (variant_dir / f"{VOL20_60_ONLY}.parquet").exists()
     assert (variant_dir / "feature_cols.json").exists()
     assert (paths.feature_reports / f"{VOL20_60_ONLY}_summary.json").exists()
+    assert not paths.feature_matrix_baseline_h5.exists()
+    assert not paths.oos_predictions_baseline_h5.exists()
+
+
+def test_phase2_core_feature_run_writes_variant_path_only(tmp_path: Path) -> None:
+    labeled_path = tmp_path / "target_h5.parquet"
+    _labeled_frame(rows=100).to_parquet(labeled_path, index=False)
+    paths = _paths(tmp_path, labeled_path)
+
+    with patch("quant_project_daily.features_long_only_phase1.reset_parquet_output_dir") as mock_reset:
+        mock_reset.side_effect = lambda p: p.mkdir(parents=True, exist_ok=True)
+        summary = run_long_only_h5_feature_set(PHASE2_CORE, paths=paths)
+
+    variant_dir = tmp_path / "data" / "feature_matrices" / PHASE2_CORE
+    assert summary["feature_set"] == PHASE2_CORE
+    assert summary["feature_count"] == 61
+    assert (variant_dir / f"{PHASE2_CORE}.parquet").exists()
+    assert (variant_dir / "feature_cols.json").exists()
+    assert (paths.feature_reports / f"{PHASE2_CORE}_summary.json").exists()
     assert not paths.feature_matrix_baseline_h5.exists()
     assert not paths.oos_predictions_baseline_h5.exists()
 

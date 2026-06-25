@@ -95,6 +95,15 @@
   - next recommended step
 - Do not create or update `CODEX_HANDOFF.md` for simple one-shot tasks.
 
+## Follow-Up Prompt Handoffs
+
+- For every non-trivial repo/research final response, include a `### Next Codex Prompt` section with one single copy-pastable fenced `text` prompt that the user can paste into another Codex thread to continue.
+- Keep the prompt concise and include only the context needed for the next diagnostic or implementation run: current status, key metrics, relevant artifacts, explicit guardrails, requested task, stop conditions, and final response format if useful.
+- Remove boilerplate that is not needed for the next run, such as generic blockers, full dirty-tree inventories, or generated-artifact lists, unless the next prompt is specifically about checkpointing or git hygiene.
+- Preserve active h5 / 5d terminology, research-ready wording, and caveats against profitability, option liquidity, option P&L, production readiness, or live-trading readiness claims.
+- If the next step is unclear, make the pasted prompt ask Codex to recommend the next step in plan mode before implementation.
+- For simple one-shot tasks where no follow-up is useful, still include `### Next Codex Prompt` and write `No follow-up prompt needed.`.
+
 ## Output Style
 
 - Be concise.
@@ -124,6 +133,12 @@ Proceed status: yes / yes with medium blockers / no
 ### Next
 
 1. <action> -> <expected result> -> <stop condition>
+
+### Next Codex Prompt
+
+```text
+<single copy-pastable Codex prompt for the next diagnostic or implementation run, or "No follow-up prompt needed.">
+```
 
 ### Metrics
 

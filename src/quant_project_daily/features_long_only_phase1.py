@@ -99,7 +99,7 @@ def _safe_ratio(num: pl.Expr, den: pl.Expr) -> pl.Expr:
 
 def _add_phase1_feature_columns_polars(df: pl.DataFrame) -> pl.DataFrame:
     c = pl.col
-    return df.with_columns(
+    df = df.with_columns(
         _safe_ratio(c("ret_20d"), c("realized_vol_20d")).alias("mom_20d_vol_adj"),
         _safe_ratio(c("ret_60d"), c("realized_vol_60d")).alias("mom_60d_vol_adj"),
         (c("ret_1d") > 0)
@@ -115,6 +115,38 @@ def _add_phase1_feature_columns_polars(df: pl.DataFrame) -> pl.DataFrame:
             c("dollar_volume").rolling_mean(20, min_samples=20).over("ticker"),
             c("dollar_volume").rolling_mean(60, min_samples=60).over("ticker"),
         ).alias("dollar_volume_ratio_20d_60d"),
+    )
+    df = df.with_columns(
+        _safe_ratio(c("realized_vol_10d"), c("realized_vol_60d")).alias("vol_ratio_10d_60d"),
+        _safe_ratio(
+            c("true_range_pct").rolling_mean(20, min_samples=20).over("ticker"),
+            c("true_range_pct").rolling_mean(60, min_samples=60).over("ticker"),
+        ).alias("range_compression_20d_60d"),
+        (
+            (c("sma_20d_slope") > 0).cast(pl.Int8)
+            + (c("sma_50d_slope") > 0).cast(pl.Int8)
+            - 1
+        )
+        .cast(pl.Float64)
+        .alias("sma_slope_agreement_20_50"),
+        (
+            (c("dist_sma_20d") > 0).cast(pl.Int8)
+            + (c("dist_sma_50d") > 0).cast(pl.Int8)
+            + (c("dist_sma_200d") > 0).cast(pl.Int8)
+        )
+        .cast(pl.Float64)
+        .alias("sma_stack_score_20_50_200"),
+        _safe_ratio(
+            c("dollar_volume").rolling_mean(10, min_samples=10).over("ticker"),
+            c("dollar_volume").rolling_mean(60, min_samples=60).over("ticker"),
+        ).alias("dollar_volume_accel_10d_60d"),
+    )
+    return df.with_columns(
+        c("vol_ratio_10d_60d")
+        .rank(method="average")
+        .over("date")
+        .truediv(pl.len().over("date"))
+        .alias("vol_regime_rank_by_date")
     )
 
 
