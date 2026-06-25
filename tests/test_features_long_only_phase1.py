@@ -33,6 +33,7 @@ PHASE1_ONLY_COLUMNS = [
 
 NO_MOMENTUM_TREND = "long_only_h5_phase1_no_momentum_trend"
 VOL_LIQ_ONLY = "long_only_h5_phase1_vol_liq_only"
+VOL20_60_ONLY = "long_only_h5_vol20_60_only"
 
 
 def _labeled_frame(rows: int = 100) -> pd.DataFrame:
@@ -219,6 +220,7 @@ def test_phase1_wfa_wrapper_writes_experimental_predictions_only(tmp_path: Path)
 def test_ablation_variant_configs_include_and_exclude_expected_features() -> None:
     no_mom = load_long_only_h5_feature_config(NO_MOMENTUM_TREND)
     vol_liq = load_long_only_h5_feature_config(VOL_LIQ_ONLY)
+    vol20_60 = load_long_only_h5_feature_config(VOL20_60_ONLY)
 
     for cfg in [no_mom, vol_liq]:
         assert "vol_ratio_5d_20d" in cfg["feature_columns"]
@@ -236,6 +238,23 @@ def test_ablation_variant_configs_include_and_exclude_expected_features() -> Non
     for col in ["mom_20d_vol_adj", "mom_60d_vol_adj", "trend_pos_ret_frac_20d", "pullback_5d_vs_60d"]:
         assert col not in vol_liq["feature_columns"]
 
+    assert "vol_ratio_20d_60d" in vol20_60["feature_columns"]
+    assert len(vol20_60["feature_columns"]) == 56
+    for col in [
+        "mom_20d_vol_adj",
+        "mom_60d_vol_adj",
+        "trend_pos_ret_frac_20d",
+        "pullback_5d_vs_60d",
+        "vol_ratio_5d_20d",
+        "atr14_to_vol20",
+        "dollar_volume_ratio_20d_60d",
+        "target_class_5d",
+        "fwd_ret_5d",
+        "next_open",
+        "exit_close_5d",
+    ]:
+        assert col not in vol20_60["feature_columns"]
+
 
 def test_ablation_variant_feature_run_writes_variant_path_only(tmp_path: Path) -> None:
     labeled_path = tmp_path / "target_h5.parquet"
@@ -251,6 +270,25 @@ def test_ablation_variant_feature_run_writes_variant_path_only(tmp_path: Path) -
     assert (variant_dir / f"{NO_MOMENTUM_TREND}.parquet").exists()
     assert (variant_dir / "feature_cols.json").exists()
     assert (paths.feature_reports / f"{NO_MOMENTUM_TREND}_summary.json").exists()
+    assert not paths.feature_matrix_baseline_h5.exists()
+    assert not paths.oos_predictions_baseline_h5.exists()
+
+
+def test_vol20_60_only_feature_run_writes_variant_path_only(tmp_path: Path) -> None:
+    labeled_path = tmp_path / "target_h5.parquet"
+    _labeled_frame(rows=100).to_parquet(labeled_path, index=False)
+    paths = _paths(tmp_path, labeled_path)
+
+    with patch("quant_project_daily.features_long_only_phase1.reset_parquet_output_dir") as mock_reset:
+        mock_reset.side_effect = lambda p: p.mkdir(parents=True, exist_ok=True)
+        summary = run_long_only_h5_feature_set(VOL20_60_ONLY, paths=paths)
+
+    variant_dir = tmp_path / "data" / "feature_matrices" / VOL20_60_ONLY
+    assert summary["feature_set"] == VOL20_60_ONLY
+    assert summary["feature_count"] == 56
+    assert (variant_dir / f"{VOL20_60_ONLY}.parquet").exists()
+    assert (variant_dir / "feature_cols.json").exists()
+    assert (paths.feature_reports / f"{VOL20_60_ONLY}_summary.json").exists()
     assert not paths.feature_matrix_baseline_h5.exists()
     assert not paths.oos_predictions_baseline_h5.exists()
 

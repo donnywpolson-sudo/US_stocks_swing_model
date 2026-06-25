@@ -1,0 +1,11 @@
+feature_set: long_only_h5_vol20_60_only
+base_config_path: configs/long_only_h5_phase1_features.yaml
+output_path: data/feature_matrices/long_only_h5_vol20_60_only
+exclude_feature_columns:
+  - mom_20d_vol_adj
+  - mom_60d_vol_adj
+  - trend_pos_ret_frac_20d
+  - pullback_5d_vs_60d
+  - vol_ratio_5d_20d
+  - atr14_to_vol20
+  - dollar_volume_ratio_20d_60d

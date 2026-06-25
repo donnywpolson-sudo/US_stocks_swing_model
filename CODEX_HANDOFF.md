@@ -1951,3 +1951,184 @@
 ## Next recommended scope
 - Plan a narrow `vol_ratio_20d_60d` redesign or single-feature experimental variant, using the same experimental-only path discipline.
 - Do not run more WFA, optional ablations, or gate replacement work without explicit scope.
+
+---
+
+## Current run: long_only_h5_vol20_60_only feature-build checkpoint
+
+## What changed
+- Added the first narrow volatility-regime experimental variant only:
+  - `long_only_h5_vol20_60_only`
+- Variant definition:
+  - includes all 55 baseline features,
+  - includes only one Phase 1 added feature: `vol_ratio_20d_60d`,
+  - excludes `vol_ratio_5d_20d`, `atr14_to_vol20`, `dollar_volume_ratio_20d_60d`, `pullback_5d_vs_60d`, `mom_20d_vol_adj`, `mom_60d_vol_adj`, and `trend_pos_ret_frac_20d`.
+- Built the feature matrix only.
+- Did not run WFA, comparison diagnostics, model tuning, feature search, feature selection, option/API work, option P&L, or gate replacement.
+
+## Files changed
+- `configs/long_only_h5_vol20_60_only_features.yaml`
+- `scripts/experimental_build_long_only_h5_vol20_60_only_features.py`
+- `scripts/experimental_run_long_only_h5_vol20_60_only_wfa.py`
+- `tests/test_features_long_only_phase1.py`
+- Generated local/ignored feature artifact:
+  - `data/feature_matrices/long_only_h5_vol20_60_only/`
+
+## Commands run
+- `pytest tests/test_no_lookahead.py tests/test_features_long_only_phase1.py -q`
+- `python scripts/experimental_build_long_only_h5_vol20_60_only_features.py`
+- Inline verification of feature columns, excluded columns, feature matrix existence, and absence of WFA/OOS outputs.
+- `git diff -- configs\gates.yaml configs\baseline_model.yaml configs\baseline_features.yaml data\feature_matrices\baseline_h5 data\oos_predictions\baseline_h5 reports\wfa\baseline_h5_oos_summary.json reports\wfa\baseline_h5_fold_summary.csv reports\gates`
+- `git status --ignored --short`
+
+## Test and check results
+- Focused tests passed after the feature build: 11 passed.
+- Feature build summary:
+  - input rows: 23,774,790
+  - output rows: 12,524,133
+  - feature count: 56
+  - target columns: 5
+  - metadata columns: 11
+  - tickers: 7,661
+  - date range: 2010-01-04 through 2026-05-21
+  - `official_baseline_replaced`: false
+- Feature-column verification:
+  - `vol_ratio_20d_60d` present.
+  - excluded Phase 1 columns absent.
+  - target/future/next-open/exit columns absent from feature list.
+- WFA/OOS verification:
+  - `reports/wfa/long_only_h5_vol20_60_only_oos_summary.json` does not exist.
+  - `data/oos_predictions/long_only_h5_vol20_60_only/` does not exist.
+- Official baseline guard diff was empty.
+
+## Remaining work
+- WFA has not run for `long_only_h5_vol20_60_only`.
+- If approved, the exact next command is:
+  - `python scripts/experimental_run_long_only_h5_vol20_60_only_wfa.py`
+- After WFA completes, comparison diagnostics should be separately scoped and should not change official gates.
+
+---
+
+## Current run: long_only_h5_vol20_60_only comparison diagnostic
+
+## What changed
+- Generated read-only comparison diagnostics for `long_only_h5_vol20_60_only`.
+- Compared against:
+  - official `baseline_h5`,
+  - full `long_only_h5_phase1`,
+  - `long_only_h5_phase1_no_momentum_trend`,
+  - `long_only_h5_phase1_vol_liq_only`.
+- Used existing completed OOS prediction files only for model outputs.
+- Attached existing `median_dollar_volume_60` from `data/research_ohlcv_daily` only because the requested focus profile requires it and OOS prediction files do not carry that proxy column.
+- Did not rerun WFA, retrain, tune, implement additional variants, change official gates, add option/API work, or stage/commit generated reports.
+
+## Files changed
+- Generated ignored reports:
+  - `reports/metrics/long_only_h5_vol20_60_only_vs_baseline_phase1_ablation_summary.csv`
+  - `reports/metrics/long_only_h5_vol20_60_only_vs_baseline_phase1_ablation_summary.json`
+  - `reports/metrics/long_only_h5_vol20_60_only_vs_baseline_phase1_ablation_by_year.csv`
+  - `reports/metrics/long_only_h5_vol20_60_only_vs_baseline_phase1_ablation_by_fold.csv`
+  - `reports/metrics/long_only_h5_vol20_60_only_vs_baseline_phase1_ablation_diagnostic.md`
+- `CODEX_HANDOFF.md`
+
+## Commands run
+- Preflight check for `data/oos_predictions/long_only_h5_vol20_60_only/fold_001.parquet` through `fold_045.parquet`.
+- Preflight check for:
+  - `reports/wfa/long_only_h5_vol20_60_only_fold_summary.csv`
+  - `reports/wfa/long_only_h5_vol20_60_only_oos_summary.json`
+- `git diff -- configs\gates.yaml configs\baseline_model.yaml configs\baseline_features.yaml data\feature_matrices\baseline_h5 data\oos_predictions\baseline_h5 reports\wfa\baseline_h5_oos_summary.json reports\wfa\baseline_h5_fold_summary.csv reports\gates`
+- Inline read-only comparison diagnostic over existing OOS prediction files.
+- Generated report existence/size checks.
+- `git diff --cached --name-only`
+- Wording search for prohibited claims in the new markdown diagnostic.
+- `git status --short`
+
+## Test and check results
+- Preflight:
+  - `long_only_h5_vol20_60_only` fold files present: 45/45.
+  - WFA summaries present.
+  - WFA summary reported 45 folds completed, 0 failed folds, and 9,903,519 OOS rows.
+- Official baseline guard diff was empty before and after diagnostics.
+- No files were staged.
+- Wording guard search found no prohibited claim terms in the new diagnostic.
+- Focus profile: `fixed_top_25 + median_dollar_volume_60 >= 25m`.
+- Summary metrics:
+  - `baseline_h5`: rank IC 0.024545, IC t-stat 8.918, net 25 bps 0.000299, break-even 27.986 bps, positive years/folds 4/12 and 22/45, avg candidates/day 9.867, turnover proxy 0.680.
+  - `long_only_h5_phase1`: rank IC 0.024706, IC t-stat 9.148, net 25 bps 0.000336, break-even 28.360 bps, positive years/folds 5/12 and 21/45, avg candidates/day 10.025, turnover proxy 0.663.
+  - `long_only_h5_phase1_no_momentum_trend`: rank IC 0.024365, IC t-stat 9.003, net 25 bps 0.000293, break-even 27.926 bps, positive years/folds 4/12 and 27/45, avg candidates/day 9.664, turnover proxy 0.684.
+  - `long_only_h5_phase1_vol_liq_only`: rank IC 0.024365, IC t-stat 9.003, net 25 bps 0.000293, break-even 27.926 bps, positive years/folds 4/12 and 27/45, avg candidates/day 9.664, turnover proxy 0.684.
+  - `long_only_h5_vol20_60_only`: rank IC 0.024404, IC t-stat 8.879, net 25 bps 0.000430, break-even 29.302 bps, positive years/folds 4/12 and 26/45, avg candidates/day 9.861, turnover proxy 0.678.
+- Best/worst:
+  - All compared profiles had best year 2020 and worst year 2018.
+  - `long_only_h5_vol20_60_only` best fold was 22 and worst fold was 35.
+- Diagnostic status: `reject_or_pause`.
+
+## Remaining work
+- Do not change official gates from this comparison.
+- `long_only_h5_vol20_60_only` has better focus-profile 25 bps net but does not improve positive-year count and remains below the approximate 10 candidates/day breadth floor.
+- Recommended next step is to pause or review diagnostics manually before deciding whether any further narrow experiment is worth running.
+
+---
+
+## Current checkpoint: long_only_h5_vol20_60_only audit
+
+## Current experiment state
+- `long_only_h5_vol20_60_only` WFA completed 45/45 folds with 0 failed folds and 9,903,519 OOS rows.
+- Read-only comparison diagnostics completed under `reports/metrics`.
+- Diagnostic status remains `reject_or_pause`.
+- Result summary:
+  - focus-profile 25 bps net improved versus official baseline, full Phase 1, and both primary ablations,
+  - positive-year count stayed weak at 4/12,
+  - average candidates/day remained below the approximate 10/day breadth floor,
+  - no official gate replacement is supported.
+- Do not run `long_only_h5_vol_ratio_pair`, optional volume-confirmation variants, or gate replacement work without new explicit scope.
+
+## Worktree classification
+- Commit-eligible source/config/test/checkpoint files:
+  - `CODEX_HANDOFF.md`
+  - `configs/long_only_h5_vol20_60_only_features.yaml`
+  - `scripts/experimental_build_long_only_h5_vol20_60_only_features.py`
+  - `scripts/experimental_run_long_only_h5_vol20_60_only_wfa.py`
+  - `tests/test_features_long_only_phase1.py`
+- Generated ignored artifacts that must remain unstaged:
+  - `data/feature_matrices/long_only_h5_vol20_60_only/`
+  - `data/oos_predictions/long_only_h5_vol20_60_only/`
+  - `reports/features/long_only_h5_vol20_60_only_summary.json`
+  - `reports/wfa/long_only_h5_vol20_60_only_fold_summary.csv`
+  - `reports/wfa/long_only_h5_vol20_60_only_oos_summary.json`
+  - `reports/metrics/long_only_h5_vol20_60_only_vs_baseline_phase1_ablation_summary.csv`
+  - `reports/metrics/long_only_h5_vol20_60_only_vs_baseline_phase1_ablation_summary.json`
+  - `reports/metrics/long_only_h5_vol20_60_only_vs_baseline_phase1_ablation_by_year.csv`
+  - `reports/metrics/long_only_h5_vol20_60_only_vs_baseline_phase1_ablation_by_fold.csv`
+  - `reports/metrics/long_only_h5_vol20_60_only_vs_baseline_phase1_ablation_diagnostic.md`
+- Local-only files that should remain unstaged:
+  - `manual_option_snapshots/`
+  - `data/options/`
+  - existing ignored `data/**`, `reports/**`, cache, and virtualenv paths not explicitly scoped for source control.
+
+## Commands run
+- `git status --short`
+- `git status --ignored --short`
+- `git diff --name-only`
+- `git ls-files --others --exclude-standard`
+- `git diff --cached --name-only`
+- `git diff -- configs\gates.yaml configs\baseline_model.yaml configs\baseline_features.yaml data\feature_matrices\baseline_h5 data\oos_predictions\baseline_h5 reports\wfa\baseline_h5_oos_summary.json reports\wfa\baseline_h5_fold_summary.csv reports\gates`
+- `pytest tests/test_no_lookahead.py tests/test_features_long_only_phase1.py -q`
+- Generated report existence checks under `reports/metrics`.
+- WFA summary existence/count check for `long_only_h5_vol20_60_only`.
+
+## Test and check results
+- Targeted tests: 11 passed.
+- Official baseline gate/config/prediction/report diff check was empty.
+- Staged diff was empty.
+- Generated comparison reports are present.
+- WFA summary confirms 45 completed folds, 0 failed folds, and 9,903,519 OOS rows.
+
+## Blockers and caveats
+- The variant remains experimental and does not justify a gate change.
+- Better focus-profile net does not solve year/fold stability or breadth concerns.
+- No profitability, readiness, option, API, or live-trading claim is supported by this work.
+
+## Next recommended scope
+- Pause experiments and review the completed diagnostics.
+- If continuing later, plan a different feature redesign explicitly; do not run additional variants or WFA from the current checkpoint without a new scope.
