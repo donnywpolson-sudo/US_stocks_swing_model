@@ -7,8 +7,8 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from quant_project_daily.config import ProjectPaths
-from quant_project_daily.feature_discovery import run_feature_discovery
+from scripts.project_config import ProjectPaths
+from scripts.phase8_model_selection.feature_discovery import run_feature_discovery
 
 
 def _tiny_cfg() -> dict[str, object]:
@@ -96,7 +96,7 @@ class TestStage21FeatureDiscoveryHandoff:
         paths = _paths(tmp_path)
         _create_synthetic_data(paths)
         monkeypatch.setattr(
-            "quant_project_daily.feature_discovery.load_feature_selection_config",
+            "scripts.phase8_model_selection.feature_discovery.load_feature_selection_config",
             lambda: _tiny_cfg(),
         )
 
@@ -133,7 +133,7 @@ class TestStage21FeatureDiscoveryHandoff:
         split_plan.to_csv(paths.wfa_reports / "baseline_h5_split_plan.csv", index=False)
 
         monkeypatch.setattr(
-            "quant_project_daily.feature_discovery.load_feature_selection_config",
+            "scripts.phase8_model_selection.feature_discovery.load_feature_selection_config",
             lambda: _tiny_cfg(),
         )
 

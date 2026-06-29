@@ -5,9 +5,9 @@ import json
 import numpy as np
 import pandas as pd
 
-from quant_project_daily.config import ProjectPaths
-from quant_project_daily.feature_discovery import _load_matrix_for_plan, discover_features_for_folds
-from quant_project_daily.feature_selection import freeze_feature_set, run_feature_selection, select_features
+from scripts.project_config import ProjectPaths
+from scripts.phase8_model_selection.feature_discovery import _load_matrix_for_plan, discover_features_for_folds
+from scripts.phase8_model_selection.feature_selection import freeze_feature_set, run_feature_selection, select_features
 
 
 def _cfg() -> dict[str, object]:
@@ -116,7 +116,7 @@ def test_freeze_feature_set_writes_manifest_and_schema_outputs(tmp_path, monkeyp
     pd.DataFrame([{"feature": "weak", "selected": False, "reject_reason": "weak_rank_ic"}]).to_csv(
         paths.feature_reports / "expanded_h5_rejected_features.csv", index=False
     )
-    monkeypatch.setattr("quant_project_daily.feature_selection.load_feature_selection_config", lambda: _cfg())
+    monkeypatch.setattr("scripts.phase8_model_selection.feature_selection.load_feature_selection_config", lambda: _cfg())
 
     manifest = freeze_feature_set(paths)
 

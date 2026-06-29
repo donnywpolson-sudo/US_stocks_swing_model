@@ -1,8 +1,8 @@
 import json
 from pathlib import Path
 
-from quant_project_daily.gates import evaluate_baseline_gate, run_baseline_gate
-from quant_project_daily.config import ProjectPaths
+from scripts.phase8_model_selection.gates import evaluate_baseline_gate, run_baseline_gate
+from scripts.project_config import ProjectPaths
 
 
 def _make_paths(tmp_path: Path) -> ProjectPaths:

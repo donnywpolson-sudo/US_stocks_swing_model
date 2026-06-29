@@ -6,9 +6,9 @@ import pandas as pd
 import polars as pl
 import pytest
 
-from quant_project_daily.column_registry import build_column_registry, load_baseline_feature_config
-from quant_project_daily.config import ProjectPaths
-from quant_project_daily.features_baseline import (
+from scripts.phase4_features.column_registry import build_column_registry, load_baseline_feature_config
+from scripts.project_config import ProjectPaths
+from scripts.phase4_features.features_baseline import (
     _build_baseline_features_polars,
     _build_baseline_scoring_features_polars,
     build_baseline_features,
@@ -254,7 +254,7 @@ def test_polars_production_feature_build(tmp_path: Path) -> None:
 
     # --- 2. Full run_baseline_features I/O path ---------------------------
     with patch(
-        "quant_project_daily.features_baseline.reset_parquet_output_dir"
+        "scripts.phase4_features.features_baseline.reset_parquet_output_dir"
     ) as mock_reset:
         mock_reset.side_effect = lambda p: p.mkdir(parents=True, exist_ok=True)
         io_summary = run_baseline_features(paths=paths)
@@ -296,7 +296,7 @@ def test_polars_scoring_feature_build_keeps_latest_model_eligible_rows_without_t
     for col in ("median_dollar_volume_60", "zero_volume_count_60", "history_bars"):
         assert col in data.columns
 
-    with patch("quant_project_daily.features_baseline.reset_parquet_output_dir") as mock_reset:
+    with patch("scripts.phase4_features.features_baseline.reset_parquet_output_dir") as mock_reset:
         mock_reset.side_effect = lambda p: p.mkdir(parents=True, exist_ok=True)
         io_summary = run_baseline_scoring_features(paths=paths)
 

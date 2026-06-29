@@ -1,8 +1,8 @@
 import pandas as pd
 
-from quant_project_daily.config import ProjectPaths
-from quant_project_daily.targets import generate_targets
-from quant_project_daily.targets import run_targets
+from scripts.project_config import ProjectPaths
+from scripts.phase3_labels.targets import generate_targets
+from scripts.phase3_labels.targets import run_targets
 
 
 def _research_frame(tickers: list[str], rows: int = 25) -> pd.DataFrame:
@@ -128,7 +128,7 @@ def test_run_targets_uses_stage03_raw_split_gaps(tmp_path, monkeypatch) -> None:
     paths.research_ohlcv_daily.mkdir(parents=True)
     paths.validation_reports.mkdir(parents=True)
     monkeypatch.setattr(
-        "quant_project_daily.targets.reset_parquet_output_dir",
+        "scripts.phase3_labels.targets.reset_parquet_output_dir",
         lambda path: path.mkdir(parents=True, exist_ok=True),
     )
 

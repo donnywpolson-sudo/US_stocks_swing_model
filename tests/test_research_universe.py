@@ -1,6 +1,6 @@
 import pandas as pd
 
-from quant_project_daily.research_universe import build_research_universe
+from scripts.phase2_causal_base.research_universe import build_research_universe
 
 
 def test_research_universe_keeps_warmup_and_marks_model_eligible() -> None:

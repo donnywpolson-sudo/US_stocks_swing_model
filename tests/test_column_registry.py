@@ -1,4 +1,4 @@
-from quant_project_daily.column_registry import build_column_registry
+from scripts.phase4_features.column_registry import build_column_registry
 
 
 def test_column_registry_separates_features_targets_metadata_and_excluded() -> None:

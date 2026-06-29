@@ -40,3 +40,10 @@ logs/
 # Re-ignore generated Python caches after source-tree allow rules
 __pycache__/
 *.pyc
+
+# Local secrets
+.env
+.env.*
+*.env
+*.env.*
+alpha_vantage.env

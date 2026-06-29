@@ -1,6 +1,6 @@
 import pandas as pd
 
-from quant_project_daily.gap_impact_diagnostics import build_gap_impact
+from scripts.validation.gap_impact_diagnostics import build_gap_impact
 
 
 def test_gap_impact_joins_by_ticker_date_and_counts_model_status() -> None:

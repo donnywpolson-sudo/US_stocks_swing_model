@@ -3,8 +3,8 @@ from pathlib import Path
 import pandas as pd
 import pytest
 
-from quant_project_daily.config import ProjectPaths
-from quant_project_daily.option_chain_snapshots import (
+from scripts.project_config import ProjectPaths
+from scripts.phase8_model_selection.option_chain_snapshots import (
     CORE_REQUIRED_COLUMNS,
     MANUAL_TEMPLATE_COLUMNS,
     OPTION_CHAIN_SCHEMA,

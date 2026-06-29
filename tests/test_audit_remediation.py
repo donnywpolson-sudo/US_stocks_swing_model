@@ -5,13 +5,13 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from quant_project_daily.audit_remediation import (
+from scripts.validation.audit_remediation import (
     build_data_universe_limitations_markdown,
     build_negative_control_diagnostics,
     build_provenance_manifest,
     run_audit_remediation,
 )
-from quant_project_daily.config import ProjectPaths
+from scripts.project_config import ProjectPaths
 
 
 def _paths(tmp_path: Path) -> ProjectPaths:

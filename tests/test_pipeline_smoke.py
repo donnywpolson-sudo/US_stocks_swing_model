@@ -4,14 +4,14 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 
-from quant_project_daily.normalize_daily import normalize_daily
-from quant_project_daily.causal_gating import apply_causal_gating
-from quant_project_daily.research_universe import build_research_universe
-from quant_project_daily.targets import generate_targets
-from quant_project_daily.features_baseline import build_baseline_features
-from quant_project_daily.wfa_splits import build_wfa_plan
-from quant_project_daily.baseline_wfa import run_fold
-from quant_project_daily.metrics import build_metrics
+from scripts.phase2_causal_base.normalize_daily import normalize_daily
+from scripts.phase2_causal_base.causal_gating import apply_causal_gating
+from scripts.phase2_causal_base.research_universe import build_research_universe
+from scripts.phase3_labels.targets import generate_targets
+from scripts.phase4_features.features_baseline import build_baseline_features
+from scripts.phase5_wfa.wfa_splits import build_wfa_plan
+from scripts.phase7_wfa.baseline_wfa import run_fold
+from scripts.phase8_model_selection.metrics import build_metrics
 
 # ---------------------------------------------------------------------------
 # Synthetic helpers

@@ -4,8 +4,8 @@ from unittest.mock import patch
 import pandas as pd
 import pytest
 
-from quant_project_daily.config import ProjectPaths
-from quant_project_daily.daily_underlying_signals import CANDIDATE_COLUMNS, build_daily_underlying_signals, run_daily_underlying_signals
+from scripts.project_config import ProjectPaths
+from scripts.phase8_model_selection.daily_underlying_signals import CANDIDATE_COLUMNS, build_daily_underlying_signals, run_daily_underlying_signals
 
 
 def _paths(tmp_path: Path) -> ProjectPaths:
@@ -177,7 +177,7 @@ def test_run_daily_underlying_signals_writes_csv_and_summary_without_model_artif
     (paths.feature_matrix_baseline_h5 / "metadata_cols.json").write_text('["date", "ticker", "raw_ticker"]', encoding="utf-8")
     (paths.feature_matrix_baseline_h5 / "excluded_cols.json").write_text("[]", encoding="utf-8")
 
-    with patch("quant_project_daily.daily_underlying_signals.load_model_config", return_value=_model_cfg()):
+    with patch("scripts.phase8_model_selection.daily_underlying_signals.load_model_config", return_value=_model_cfg()):
         summary = run_daily_underlying_signals(paths=paths, rebuild_scoring=False)
 
     candidate_path = paths.signals_reports / "baseline_h5_daily_underlying_candidates.csv"

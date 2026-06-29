@@ -1,6 +1,6 @@
 import pandas as pd
 
-from quant_project_daily.wfa_splits import build_wfa_plan
+from scripts.phase5_wfa.wfa_splits import build_wfa_plan
 
 
 CFG = {

@@ -3,7 +3,7 @@ from pathlib import Path
 import pandas as pd
 import pytest
 
-from quant_project_daily.baseline_wfa import PREDICTION_COLUMNS, run_fold, select_folds, validate_feature_cols
+from scripts.phase7_wfa.baseline_wfa import PREDICTION_COLUMNS, run_fold, select_folds, validate_feature_cols
 
 
 def _matrix() -> pd.DataFrame:
@@ -88,8 +88,8 @@ def test_run_fold_failure_raises_runtime_error(tmp_path: Path) -> None:
     import json
     from unittest.mock import patch
     from pathlib import Path as P
-    from quant_project_daily.baseline_wfa import run_baseline_wfa
-    from quant_project_daily.config import ProjectPaths
+    from scripts.phase7_wfa.baseline_wfa import run_baseline_wfa
+    from scripts.project_config import ProjectPaths
 
     # Create minimal directories and files
     feature_dir = tmp_path / "feature_matrix_baseline_h5"
@@ -149,7 +149,7 @@ def test_run_fold_failure_raises_runtime_error(tmp_path: Path) -> None:
         gates_reports=tmp_path / "reports" / "gates",
     )
 
-    with patch("quant_project_daily.baseline_wfa.load_model_config", return_value={
+    with patch("scripts.phase7_wfa.baseline_wfa.load_model_config", return_value={
         "model_type": "ridge", "ridge_alpha": 1.0, "target_column": "target_class_5d",
-    }), patch("quant_project_daily.baseline_wfa.reset_parquet_output_dir"), pytest.raises(RuntimeError, match="fold.*failed"):
+    }), patch("scripts.phase7_wfa.baseline_wfa.reset_parquet_output_dir"), pytest.raises(RuntimeError, match="fold.*failed"):
         run_baseline_wfa(paths=paths)

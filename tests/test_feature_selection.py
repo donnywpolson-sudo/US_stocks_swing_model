@@ -6,8 +6,8 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from quant_project_daily.config import ProjectPaths
-from quant_project_daily.feature_selection import (
+from scripts.project_config import ProjectPaths
+from scripts.phase8_model_selection.feature_selection import (
     freeze_feature_set,
     run_feature_selection,
     select_features,
@@ -222,7 +222,7 @@ class TestRunFeatureSelection:
         corr.to_csv(paths.feature_reports / "expanded_h5_feature_correlations.csv", index=False)
 
         monkeypatch.setattr(
-            "quant_project_daily.feature_selection.load_feature_selection_config",
+            "scripts.phase8_model_selection.feature_selection.load_feature_selection_config",
             lambda: _cfg(),
         )
 
@@ -267,7 +267,7 @@ class TestFreezeFeatureSet:
         rejected_df.to_csv(paths.feature_reports / "expanded_h5_rejected_features.csv", index=False)
 
         monkeypatch.setattr(
-            "quant_project_daily.feature_selection.load_feature_selection_config",
+            "scripts.phase8_model_selection.feature_selection.load_feature_selection_config",
             lambda: _cfg(),
         )
 

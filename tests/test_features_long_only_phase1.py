@@ -6,8 +6,8 @@ from unittest.mock import patch
 
 import pandas as pd
 
-from quant_project_daily.config import ProjectPaths
-from quant_project_daily.features_long_only_phase1 import (
+from scripts.project_config import ProjectPaths
+from scripts.phase9_research.features_long_only_phase1 import (
     PHASE1_FEATURE_SET,
     _build_long_only_h5_phase1_features_polars,
     _build_long_only_h5_features_polars,
@@ -152,7 +152,7 @@ def test_phase1_feature_run_writes_experimental_path_only(tmp_path: Path) -> Non
     _labeled_frame(rows=100).to_parquet(labeled_path, index=False)
     paths = _paths(tmp_path, labeled_path)
 
-    with patch("quant_project_daily.features_long_only_phase1.reset_parquet_output_dir") as mock_reset:
+    with patch("scripts.phase9_research.features_long_only_phase1.reset_parquet_output_dir") as mock_reset:
         mock_reset.side_effect = lambda p: p.mkdir(parents=True, exist_ok=True)
         summary = run_long_only_h5_phase1_features(paths=paths)
 
@@ -213,8 +213,8 @@ def test_phase1_wfa_wrapper_writes_experimental_predictions_only(tmp_path: Path)
         }
     ).to_csv(paths.wfa_reports / "baseline_h5_split_plan.csv", index=False)
 
-    with patch("quant_project_daily.features_long_only_phase1.reset_parquet_output_dir") as mock_reset, patch(
-        "quant_project_daily.features_long_only_phase1.load_model_config",
+    with patch("scripts.phase9_research.features_long_only_phase1.reset_parquet_output_dir") as mock_reset, patch(
+        "scripts.phase9_research.features_long_only_phase1.load_model_config",
         return_value={"model_type": "ridge", "ridge_alpha": 1.0, "target_column": "target_class_5d"},
     ):
         mock_reset.side_effect = lambda p: p.mkdir(parents=True, exist_ok=True)
@@ -320,7 +320,7 @@ def test_ablation_variant_feature_run_writes_variant_path_only(tmp_path: Path) -
     _labeled_frame(rows=100).to_parquet(labeled_path, index=False)
     paths = _paths(tmp_path, labeled_path)
 
-    with patch("quant_project_daily.features_long_only_phase1.reset_parquet_output_dir") as mock_reset:
+    with patch("scripts.phase9_research.features_long_only_phase1.reset_parquet_output_dir") as mock_reset:
         mock_reset.side_effect = lambda p: p.mkdir(parents=True, exist_ok=True)
         summary = run_long_only_h5_feature_set(NO_MOMENTUM_TREND, paths=paths)
 
@@ -338,7 +338,7 @@ def test_vol20_60_only_feature_run_writes_variant_path_only(tmp_path: Path) -> N
     _labeled_frame(rows=100).to_parquet(labeled_path, index=False)
     paths = _paths(tmp_path, labeled_path)
 
-    with patch("quant_project_daily.features_long_only_phase1.reset_parquet_output_dir") as mock_reset:
+    with patch("scripts.phase9_research.features_long_only_phase1.reset_parquet_output_dir") as mock_reset:
         mock_reset.side_effect = lambda p: p.mkdir(parents=True, exist_ok=True)
         summary = run_long_only_h5_feature_set(VOL20_60_ONLY, paths=paths)
 
@@ -357,7 +357,7 @@ def test_phase2_core_feature_run_writes_variant_path_only(tmp_path: Path) -> Non
     _labeled_frame(rows=100).to_parquet(labeled_path, index=False)
     paths = _paths(tmp_path, labeled_path)
 
-    with patch("quant_project_daily.features_long_only_phase1.reset_parquet_output_dir") as mock_reset:
+    with patch("scripts.phase9_research.features_long_only_phase1.reset_parquet_output_dir") as mock_reset:
         mock_reset.side_effect = lambda p: p.mkdir(parents=True, exist_ok=True)
         summary = run_long_only_h5_feature_set(PHASE2_CORE, paths=paths)
 
@@ -416,8 +416,8 @@ def test_ablation_variant_wfa_writes_variant_predictions_only(tmp_path: Path) ->
         }
     ).to_csv(paths.wfa_reports / "baseline_h5_split_plan.csv", index=False)
 
-    with patch("quant_project_daily.features_long_only_phase1.reset_parquet_output_dir") as mock_reset, patch(
-        "quant_project_daily.features_long_only_phase1.load_model_config",
+    with patch("scripts.phase9_research.features_long_only_phase1.reset_parquet_output_dir") as mock_reset, patch(
+        "scripts.phase9_research.features_long_only_phase1.load_model_config",
         return_value={"model_type": "ridge", "ridge_alpha": 1.0, "target_column": "target_class_5d"},
     ):
         mock_reset.side_effect = lambda p: p.mkdir(parents=True, exist_ok=True)

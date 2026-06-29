@@ -6,8 +6,8 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from quant_project_daily.metrics import build_metrics, run_metrics
-from quant_project_daily.config import ProjectPaths
+from scripts.phase8_model_selection.metrics import build_metrics, run_metrics
+from scripts.project_config import ProjectPaths
 
 
 def _make_paths(tmp_path: Path) -> ProjectPaths:

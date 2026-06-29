@@ -2,8 +2,8 @@ from pathlib import Path
 
 import pandas as pd
 
-from quant_project_daily.config import ProjectPaths
-from quant_project_daily.validation_diagnostics import run_validation_diagnostics
+from scripts.project_config import ProjectPaths
+from scripts.validation.validation_diagnostics import run_validation_diagnostics
 
 
 def _paths(tmp_path: Path) -> ProjectPaths:

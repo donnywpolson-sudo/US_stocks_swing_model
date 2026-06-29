@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from quant_project_daily.raw_validation import validate_raw_files
+from scripts.phase1C_validate.raw_validation import validate_raw_files
 
 
 HEADER = "<TICKER>,<PER>,<DATE>,<TIME>,<OPEN>,<HIGH>,<LOW>,<CLOSE>,<VOL>,<OPENINT>\n"

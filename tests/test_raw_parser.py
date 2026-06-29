@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from quant_project_daily.raw_validation import clean_ticker, normalize_time_value, read_raw_txt
+from scripts.phase1C_validate.raw_validation import clean_ticker, normalize_time_value, read_raw_txt
 
 
 def test_angle_headers_ticker_and_time_values(tmp_path: Path) -> None:

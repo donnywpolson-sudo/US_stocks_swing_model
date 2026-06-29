@@ -1,8 +1,8 @@
 import pandas as pd
 import pytest
 
-from quant_project_daily.execution import assign_score_buckets, daily_long_short_from_buckets
-from quant_project_daily.metrics import build_metrics
+from scripts.execution import assign_score_buckets, daily_long_short_from_buckets
+from scripts.phase8_model_selection.metrics import build_metrics
 
 
 def _preds() -> pd.DataFrame:

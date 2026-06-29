@@ -1,7 +1,7 @@
 import pandas as pd
 import pytest
 
-from quant_project_daily.causal_gating import apply_causal_gating
+from scripts.phase2_causal_base.causal_gating import apply_causal_gating
 
 
 def _frame(rows: int = 260) -> pd.DataFrame:

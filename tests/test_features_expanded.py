@@ -1,8 +1,8 @@
 import pandas as pd
 
-from quant_project_daily.config import ProjectPaths
-from quant_project_daily.features_baseline import build_baseline_features
-from quant_project_daily.features_expanded import _run_polars, build_expanded_features, load_expanded_feature_config, run_expanded_features
+from scripts.project_config import ProjectPaths
+from scripts.phase4_features.features_baseline import build_baseline_features
+from scripts.phase4_features.features_expanded import _run_polars, build_expanded_features, load_expanded_feature_config, run_expanded_features
 
 
 def _labeled(tickers=("A", "B"), rows=300) -> pd.DataFrame:
@@ -122,7 +122,7 @@ def test_stage20_reads_only_parquet_when_registry_jsons_share_directory(tmp_path
 
 
 def test_stage20_run_expanded_features(tmp_path, monkeypatch) -> None:
-    monkeypatch.setattr("quant_project_daily.config.REPO_ROOT", tmp_path)
+    monkeypatch.setattr("scripts.project_config.REPO_ROOT", tmp_path)
     paths = ProjectPaths(
         repo_root=tmp_path,
         raw_txt=tmp_path / "data" / "raw_txt",

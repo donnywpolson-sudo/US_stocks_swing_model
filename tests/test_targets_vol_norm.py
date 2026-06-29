@@ -6,8 +6,8 @@ from unittest.mock import patch
 import numpy as np
 import pandas as pd
 
-from quant_project_daily.config import ProjectPaths
-from quant_project_daily.targets_vol_norm import (
+from scripts.project_config import ProjectPaths
+from scripts.phase3_labels.targets_vol_norm import (
     VOL_NORM60_COLUMNS,
     generate_vol_norm60_targets,
     run_vol_norm60_targets,
@@ -147,7 +147,7 @@ def test_vol_norm60_target_run_writes_experimental_path_only(tmp_path: Path) -> 
     _labeled_frame(rows=90).to_parquet(active_path / "targets.parquet", index=False)
     paths = _paths(tmp_path, active_path)
 
-    with patch("quant_project_daily.targets_vol_norm.reset_parquet_output_dir") as mock_reset:
+    with patch("scripts.phase3_labels.targets_vol_norm.reset_parquet_output_dir") as mock_reset:
         mock_reset.side_effect = lambda p: p.mkdir(parents=True, exist_ok=True)
         summary = run_vol_norm60_targets(paths=paths)
 

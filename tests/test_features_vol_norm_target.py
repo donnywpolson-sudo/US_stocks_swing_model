@@ -7,8 +7,8 @@ from unittest.mock import patch
 import numpy as np
 import pandas as pd
 
-from quant_project_daily.config import ProjectPaths
-from quant_project_daily.features_vol_norm_target import (
+from scripts.project_config import ProjectPaths
+from scripts.phase9_research.features_vol_norm_target import (
     VOL_NORM60_FEATURE_SET,
     _build_vol_norm60_target_features_polars,
     load_vol_norm60_target_feature_config,
@@ -138,7 +138,7 @@ def test_vol_norm60_target_feature_run_writes_experimental_path_only(tmp_path: P
     _experimental_target_frame(rows=100).to_parquet(target_path / "targets.parquet", index=False)
     paths = _paths(tmp_path, target_path)
 
-    with patch("quant_project_daily.features_vol_norm_target.reset_parquet_output_dir") as mock_reset:
+    with patch("scripts.phase9_research.features_vol_norm_target.reset_parquet_output_dir") as mock_reset:
         mock_reset.side_effect = lambda p: p.mkdir(parents=True, exist_ok=True)
         summary = run_vol_norm60_target_features(paths=paths)
 
@@ -199,8 +199,8 @@ def test_vol_norm60_target_wfa_writes_experimental_predictions_only(tmp_path: Pa
         }
     ).to_csv(paths.wfa_reports / "baseline_h5_split_plan.csv", index=False)
 
-    with patch("quant_project_daily.features_vol_norm_target.reset_parquet_output_dir") as mock_reset, patch(
-        "quant_project_daily.features_vol_norm_target.load_model_config",
+    with patch("scripts.phase9_research.features_vol_norm_target.reset_parquet_output_dir") as mock_reset, patch(
+        "scripts.phase9_research.features_vol_norm_target.load_model_config",
         return_value={"model_type": "ridge", "ridge_alpha": 1.0, "target_column": "target_class_5d_vol_norm60"},
     ):
         mock_reset.side_effect = lambda p: p.mkdir(parents=True, exist_ok=True)
